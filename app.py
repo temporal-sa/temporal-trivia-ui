@@ -23,10 +23,12 @@ def home():
 def create_game():
     game_id = f"{randint(0, 9)}{randint(0, 9)}{randint(0, 9)}{randint(0, 9)}"
     games[game_id] = {"users": {}, "current_question": None, "answers": []}
+    games[game_id]["started"] = False
     return redirect(url_for('join', game_id=game_id))
 
 @app.route('/<game_id>/start')
 def start(game_id):
+    games[game_id]["started"] = True
     games[game_id]["current_question"] = choice(questions)
     games[game_id]["status"] = "ready"
     return render_template('start.html', game_id=game_id)

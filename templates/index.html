@@ -37,7 +37,13 @@
     <tr>
       <td>{{ id }}</td>
       <td>{{ game.users|length }}</td>
-      <td><button onclick="location.href='/{{ id }}/join'" class="btn btn-dark my-3" type="button">Join</button></td>
+      <td>
+        {% if game.started %}
+            <button class="btn btn-secondary" disabled>Game Started</button>
+        {% else %}
+        <button onclick="location.href='/{{ id }}/join'" class="btn btn-dark my-3" type="button">Join</button>
+        {% endif %}        
+      </td>
     </tr>
     {% endif %}
     {% endfor %}
