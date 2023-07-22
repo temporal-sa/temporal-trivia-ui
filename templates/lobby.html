@@ -3,13 +3,12 @@
 {% block content %}
 
 <head>
-  <meta http-equiv="refresh" content="1">
   <style>
     table {
       border-collapse: separate;
       border-spacing: 0;
-      width: 50%;
       margin: auto;
+      width: 50%;
       border: 1px solid black;
       border-radius: 10px;
       overflow: hidden;
@@ -25,6 +24,10 @@
       background-color: black;
       color: white;
     }
+
+    td {
+      height: 50px;
+    }
   </style>
 </head>
 <body>
@@ -39,12 +42,29 @@
   </tr>
   {% endfor %}
 </table>
-{% if users|length < 5 %}
-    <p style="text-align: center;">Waiting for more players to join...</p>
-{% else %}
-    <button onclick="location.href='/{{ game_id }}/start'" type="button">Start Game</button>
-{% endif %}
+<p style="text-align: center;">Waiting for more players to join...</p>
 </body>
+<script>
+    var start = Date.now(); // get the current time in milliseconds
+    var interval = setInterval(function() {
+        var elapsed = Date.now() - start; // calculate the elapsed time
+        console.log("Elapsed time: " + elapsed);
+        if(elapsed > 10000) { // if 10 seconds have passed
+            console.log("10 seconds have passed. Redirecting to start page.");
+            clearInterval(interval); // stop the interval
+            window.location.href = '/{{ game_id }}/start'; // redirect to start page
+        }
+        fetch('/{{ game_id }}/get_player_count')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Current player count: " + data);
+                if(data.count >= 2) {
+                    console.log("Player count is 2 or more. Redirecting to start page.");
+                    clearInterval(interval); // stop the interval
+                    window.location.href = '/{{ game_id }}/start'; // redirect to start page
+                }
+            });
+    }, 1000); // run this interval every 1 second (1000 milliseconds)
+</script>
 
 {% endblock %}
-

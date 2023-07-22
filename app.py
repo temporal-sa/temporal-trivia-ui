@@ -48,10 +48,12 @@ def join(game_id):
 
 @app.route('/<game_id>/lobby')
 def lobby(game_id):
-    if len(games[game_id]["users"]) >= 2:
-        return redirect(url_for('start', game_id=game_id))
-    else:
-        return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id)
+     return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id)
+
+@app.route('/<string:game_id>/get_player_count', methods=['GET'])
+def get_player_count(game_id):
+    game = games[game_id]
+    return jsonify({'count': len(games[game_id]["users"]), 'users': games[game_id]["users"]})
 
 @app.route('/<game_id>/check_ready', methods=['GET'])
 def check_ready(game_id):
