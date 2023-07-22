@@ -38,7 +38,7 @@
     <th>Players</th>
   </tr>
   {% for i in range(4) %}
-  <tr style="background-color: {% if question.choices[i] == question.answer %}green{% else %}white{% endif %}">
+  <tr style="background-color: {% if question.choices[i] == question.answer %}#98fb98{% else %}#FFFFFF{% endif %}"> <!-- light green for correct answer and light grey for wrong ones -->
     <td>{{ 'ABCD'[i] }}: {{ question.choices[i] }}</td>
     <td>
       {% for result in results %}
@@ -52,4 +52,5 @@
 </body>
 
 {% endblock %}
+
 

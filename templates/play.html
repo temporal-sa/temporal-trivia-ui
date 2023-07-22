@@ -8,7 +8,8 @@
       border-collapse: separate;
       border-spacing: 0;
       margin: auto;
-      width: 50%;
+      width: 100%;
+      max-width: 600px;  /* This will ensure the table doesn't get too wide on large screens */
       border: 1px solid black;
       border-radius: 10px;
       overflow: hidden;
@@ -28,22 +29,36 @@
     td {
       height: 50px;
     }
+
+    .clickable-row {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 <h2 style="text-align: center;">{{ question }}</h2>
-<form action="/{{ game_id }}/play" method="post">
-<table>
-  <tr>
-    <th>Choices</th>
-  </tr>
-  {% for choice in choices %}
-  <tr>
-    <td><button type="submit" name="choice" value="{{ choice }}">{{ choice }}</button></td>
-  </tr>
-  {% endfor %}
-</table>
+<form id="choiceForm" action="/{{ game_id }}/play" method="post">
+  <input id="selectedChoice" type="hidden" name="choice">
+  <table>
+    <tr>
+      <th>Choices</th>
+    </tr>
+    {% for choice in choices %}
+    <tr class="clickable-row" data-choice="{{ choice }}">
+      <td>
+        {{ choice }}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
 </form>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  $('.clickable-row').click(function() {
+    $('#selectedChoice').val($(this).data('choice'));
+    $('#choiceForm').submit();
+  });
+</script>
 </body>
 
 {% endblock %}
