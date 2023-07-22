@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "temporal-trivia-ui"
+version = "0.1.0"
+description = "Temporal Trivia UI"
+authors = ["ktenzer <keith.tenzer@temporal.io>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+flask = {extras = ["async"], version = "^2.2.3"}
+
+[tool.poetry.group.dev.dependencies]
+temporalio = "^1.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

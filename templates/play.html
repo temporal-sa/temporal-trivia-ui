@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+  <style>
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: auto;
+      width: 50%;
+      border: 1px solid black;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid black;
+      text-align: center;
+      padding: 10px;
+    }
+
+    th {
+      background-color: black;
+      color: white;
+    }
+
+    td {
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+<h2 style="text-align: center;">{{ question }}</h2>
+<form action="/{{ game_id }}/play" method="post">
+<table>
+  <tr>
+    <th>Choices</th>
+  </tr>
+  {% for choice in choices %}
+  <tr>
+    <td><button type="submit" name="choice" value="{{ choice }}">{{ choice }}</button></td>
+  </tr>
+  {% endfor %}
+</table>
+</form>
+</body>
+
+{% endblock %}
+

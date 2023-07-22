@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<body>
+<h2>Join the Game {{ game_id }}</h2>
+<form action="/{{ game_id }}/join" method="post">
+  <label for="username">Enter your username:</label><br>
+  <input type="text" id="username" name="username"><br>
+  <input type="submit" class="btn btn-dark my-3" value="Join">
+</form>
+</body>
+
+{% endblock %}
+

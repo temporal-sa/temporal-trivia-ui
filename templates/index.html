@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+  <style>
+    .top-align {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      gap: 20px; /* Add space between elements */
+      padding-top: 20px; /* Add some padding at the top */
+    }
+    table {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="top-align">
+  <h2>Welcome to the Trivia Game!</h2>
+
+  <h3>Create a new game</h3>
+  <button onclick="location.href='/create_game'" class="btn btn-dark my-3" type="button">Create Game</button>
+
+  <h3>Join an existing game</h3>
+  <table>
+    <tr>
+      <th>Game ID</th>
+      <th>Number of Players</th>
+      <th>Action</th>
+    </tr>
+    {% for id, game in games.items() %}
+    {% if game.users|length < 5 %}
+    <tr>
+      <td>{{ id }}</td>
+      <td>{{ game.users|length }}</td>
+      <td><button onclick="location.href='/{{ id }}/join'" class="btn btn-dark my-3" type="button">Join</button></td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+  </table>
+</div>
+</body>
+
+{% endblock %}
+

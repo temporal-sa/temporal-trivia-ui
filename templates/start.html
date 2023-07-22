@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+  <style>
+    .center {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start; /* Align items to the top */
+      align-items: center;
+      text-align: center;
+      padding-top: 20px; /* Optional: Add some padding at the top */
+    }
+    h1 {
+      margin-bottom: 20px;  /* Add space below the h1 element */
+    }
+  </style>
+</head>
+<body>
+<div class="center">
+  <h1>Generating Questions...</h1>
+  <img src="https://media.giphy.com/media/Xy0VFYHYmfLD7SNvoo/giphy.gif" alt="Generating Questions..." />
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+setTimeout(function(){
+   check();
+}, 3000);
+
+function check() {
+    fetch('/{{ game_id }}/check_ready')
+        .then(response => response.json())
+        .then(data => {
+            if (data.ready) {
+                window.location.href = '/{{ game_id }}/play';
+            } else {
+                setTimeout(check, 1000);
+            }
+        });
+}
+</script>
+</body>
+
+{% endblock %}
+

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+  <meta http-equiv="refresh" content="1">
+  <style>
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 50%;
+      margin: auto;
+      border: 1px solid black;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid black;
+      text-align: center;
+      padding: 10px;
+    }
+
+    th {
+      background-color: black;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+<h2 style="text-align: center;">Lobby</h2>
+<table>
+  <tr>
+    <th>Players</th>
+  </tr>
+  {% for user in users %}
+  <tr>
+    <td>{{ user }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% if users|length < 5 %}
+    <p style="text-align: center;">Waiting for more players to join...</p>
+{% else %}
+    <button onclick="location.href='/{{ game_id }}/start'" type="button">Start Game</button>
+{% endif %}
+</body>
+
+{% endblock %}
+

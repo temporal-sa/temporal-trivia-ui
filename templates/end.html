@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    table {
+      margin: auto;
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 50%;
+      border: 1px solid black;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid black;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: black;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+<h2 style="text-align: center;">Results</h2>
+<table>
+  <tr>
+    <th>Player</th>
+    <th>Score</th>
+  </tr>
+  {% for user, score in users.items() %}
+  <tr>
+    <td>{{ user }}</td>
+    <td>{{ score }}</td>
+  </tr>
+  {% endfor %}
+</table>
+<div style="text-align: center;">
+  <a href="/{{ game_id }}/play">Play Again</a>
+</div>
+</body>
+</html>
+
+{% endblock %}
+

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+  <style>
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: auto;
+      width: 50%;
+      border: 1px solid black;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid black;
+      text-align: center;
+      padding: 10px;
+    }
+
+    th {
+      background-color: black;
+      color: white;
+    }
+
+    td {
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+<h2 style="text-align: center;">Results for question: {{ question.question }}</h2>
+<table>
+  <tr>
+    <th>Choices</th>
+    <th>Players</th>
+  </tr>
+  {% for i in range(4) %}
+  <tr style="background-color: {% if question.choices[i] == question.answer %}green{% else %}white{% endif %}">
+    <td>{{ 'ABCD'[i] }}: {{ question.choices[i] }}</td>
+    <td>
+      {% for result in results %}
+      {% if result.choice == question.choices[i] %}{{ result.username }}{% endif %}
+      {% endfor %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+<div style="text-align: center;"><a href="/{{ game_id }}/end">End game</a></div>
+</body>
+
+{% endblock %}
+
