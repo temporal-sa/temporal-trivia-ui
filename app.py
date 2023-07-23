@@ -11,6 +11,8 @@ from temporalio.client import WorkflowFailureError
 from client import get_client
 from workflow import TriviaWorkflowInput, PlayerWorkflowInput, StartGameSignal
 
+import re
+
 app = Flask(__name__)
 app.secret_key = 'some secret key'  # replace with a real secret key
 
@@ -26,7 +28,19 @@ questions = [
 ]
 
 @app.route('/')
-def home(): 
+async def home(): 
+    client = await get_client()
+    async for wf in client.list_workflows("WorkflowType = 'TriviaGameWorkflow'"):
+        handle = client.get_workflow_handle(wf.id, run_id=wf.run_id)
+
+        desc = await handle.describe()
+        if (desc.status == 1):
+            regex = re.search(r'(?<=trivia-game-)\d+$', wf.id)
+
+            if regex:
+                game_id = regex.group()
+                games[game_id] = "ready"
+
     return render_template('index.html', games=games)
 
 @app.route('/create_game')
@@ -102,7 +116,7 @@ async def join(game_id):
 
 @app.route('/<game_id>/lobby')
 def lobby(game_id):
-     return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id)
+    return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id)
 
 @app.route('/<string:game_id>/get_player_count', methods=['GET'])
 def get_player_count(game_id):
