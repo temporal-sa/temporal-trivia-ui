@@ -49,7 +49,7 @@
     var interval = setInterval(function() {
         var elapsed = Date.now() - start; // calculate the elapsed time
         console.log("Elapsed time: " + elapsed);
-        if(elapsed > 10000) { // if 10 seconds have passed
+        if(elapsed > 100000) { // if 10 seconds have passed
             console.log("10 seconds have passed. Redirecting to start page.");
             clearInterval(interval); // stop the interval
             window.location.href = '/{{ game_id }}/start'; // redirect to start page

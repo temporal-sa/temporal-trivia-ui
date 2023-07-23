@@ -1,5 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from random import choice, randint
+import asyncio
+import random
+import string
+import os
+import uuid
+from typing import List, Dict
+from temporalio.exceptions import FailureError
+from temporalio.client import WorkflowFailureError
+from client import get_client
+from workflow import TriviaWorkflowInput, PlayerWorkflowInput, StartGameSignal
 
 app = Flask(__name__)
 app.secret_key = 'some secret key'  # replace with a real secret key
@@ -16,27 +26,69 @@ questions = [
 ]
 
 @app.route('/')
-def home():
+def home(): 
     return render_template('index.html', games=games)
 
 @app.route('/create_game')
-def create_game():
-    game_id = f"{randint(0, 9)}{randint(0, 9)}{randint(0, 9)}{randint(0, 9)}"
+async def create_game():
+    game_id = str(uuid.uuid4().int)[:6] 
     games[game_id] = {"users": {}, "current_question": None, "answers": []}
     games[game_id]["started"] = False
+
+    trivia_game_input = TriviaWorkflowInput(
+        NumberOfPlayers=2,
+        NumberOfQuestions=5,
+    )  
+
+    # Start booking workflow
+    client = await get_client()
+
+    await client.start_workflow(
+        "TriviaGameWorkflow",
+        trivia_game_input,
+        id=f'trivia-game-{game_id}',
+        task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+    )
+
     return redirect(url_for('join', game_id=game_id))
 
 @app.route('/<game_id>/start')
-def start(game_id):
+async def start(game_id):
     games[game_id]["started"] = True
     games[game_id]["current_question"] = choice(questions)
     games[game_id]["status"] = "ready"
+
+    # Start player workflow
+    client = await get_client()
+
+    StartGameSignalInput = StartGameSignal(
+        action="StartGame"
+    )    
+    trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+    await trivia_workflow.signal("start-game-signal", StartGameSignalInput)
+
     return render_template('start.html', game_id=game_id)
 
 @app.route('/<game_id>/join', methods=['GET', 'POST'])
-def join(game_id):
+async def join(game_id):
     if request.method == 'POST':
         username = request.form['username']
+
+        player_input = PlayerWorkflowInput(
+            GameWorkflowId=f'trivia-game-{game_id}',
+            Player=username,
+        )  
+
+        # Start player workflow
+        client = await get_client()
+
+        await client.execute_workflow(
+            "AddPlayerWorkflow",
+            player_input,
+            id=f'player-{username}-{game_id}',
+            task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+        )
+
         if username not in games[game_id]["users"]:
             games[game_id]["users"][username] = 0
         session['username'] = username
