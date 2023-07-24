@@ -31,25 +31,46 @@
   </style>
 </head>
 <body>
-<h2 style="text-align: center;">Results for question: {{ question.question }}</h2>
+<h2 style="text-align: center;">{{ question }}</h2>
 <table>
   <tr>
     <th>Choices</th>
     <th>Players</th>
   </tr>
-  {% for i in range(4) %}
-  <tr style="background-color: {% if question.choices[i] == question.answer %}#98fb98{% else %}#FFFFFF{% endif %}"> <!-- light green for correct answer and light grey for wrong ones -->
-    <td>{{ 'ABCD'[i] }}: {{ question.choices[i] }}</td>
+  {% for choice in choices %}
+  <tr style="background-color: {% if choice == answer %}#98fb98{% else %}#FFFFFF{% endif %}"> <!-- light green for correct answer and light grey for wrong ones -->
+    <td>{{ choice }}: {{ choices[choice] }}</td>
     <td>
       {% for result in results %}
-      {% if result.choice == question.choices[i] %}{{ result.username }}{% endif %}
+      {% if result.choice == choice %}{{ result.username }}{% endif %}
       {% endfor %}
     </td>
   </tr>
   {% endfor %}
 </table>
-<div style="text-align: center;"><a href="/{{ game_id }}/end">End game</a></div>
 </body>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+  console.log("HERE123");
+  check();
+
+  function check() {
+      console.log("HERE456");
+      fetch('/{{ game_id }}/{{ question_number }}/check_progress')
+          .then(response => response.json())
+          .then(data => {
+              if (data.show_score) {
+                window.location.href = '/{{ game_id }}/end';    
+              } else if (data.ready) {
+                  window.location.href = '/{{ game_id }}/play';
+              } else {
+                  setTimeout(check, 1000);
+              }
+          });
+  }
+</script>
+
+
 
 {% endblock %}
 

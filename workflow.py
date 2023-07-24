@@ -9,6 +9,7 @@ from temporalio import activity, exceptions
 class TriviaWorkflowInput:
     NumberOfPlayers: int
     NumberOfQuestions: int
+    AnswerTimeLimit: int
 
 @dataclass
 class PlayerWorkflowInput:
@@ -18,3 +19,10 @@ class PlayerWorkflowInput:
 @dataclass
 class StartGameSignal:
     action: str
+
+@dataclass
+class AnswerSignal:
+    action: str
+    player: str
+    question: int
+    answer: str  

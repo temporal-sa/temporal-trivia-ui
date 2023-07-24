@@ -35,15 +35,15 @@
     <th>Player</th>
     <th>Score</th>
   </tr>
-  {% for user, score in users.items() %}
+  {% for player in players %}
   <tr>
-    <td>{{ user }}</td>
-    <td>{{ score }}</td>
+    <td>{{ player }}</td>
+    <td>{{ players[player]['score'] }}</td>
   </tr>
   {% endfor %}
 </table>
 <div style="text-align: center;">
-  <a href="/{{ game_id }}/play">Play Again</a>
+  <a href="/">Play Again</a>
 </div>
 </body>
 </html>
