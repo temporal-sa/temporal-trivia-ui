@@ -9,7 +9,7 @@
       border-spacing: 0;
       margin: auto;
       width: 100%;
-      max-width: 600px;  /* This will ensure the table doesn't get too wide on large screens */
+      max-width: 600px;
       border: 1px solid black;
       border-radius: 10px;
       overflow: hidden;
@@ -33,7 +33,7 @@
     .clickable-row {
       cursor: pointer;
     }
-    
+
     .selected-choice {
       background-color: lightgreen;
     }
@@ -63,15 +63,26 @@
       $('.clickable-row').addClass('choice-made');
       $(this).addClass('selected-choice');
       var choice = $(this).data('choice');
-      var checkResultsInterval = setInterval(function() {
-        $.get('/{{ game_id }}/check_results', function(data) {
-          if (data.ready) {
-            clearInterval(checkResultsInterval);
-            $('#selectedChoice').val(choice);
-            $('#choiceForm').submit();
-          }
-        });
-      }, 1000);
+      $('#selectedChoice').val(choice);
+      
+      // Ajax form submission
+      $.ajax({
+        url: "/{{ game_id }}/play",
+        type: 'post',
+        data: $('#choiceForm').serialize(),
+        success: function() {
+          // Start checking results after successful form submission
+          var checkResultsInterval = setInterval(function() {
+            $.get('/{{ game_id }}/check_results', function(data) {
+              if (data.ready) {
+                clearInterval(checkResultsInterval);
+                // Redirect to the desired page when ready
+                window.location.href = '/{{ game_id }}/' + choice + '/results';
+              }
+            });
+          }, 1000);
+        }
+      });
     }
   }); 
 </script>

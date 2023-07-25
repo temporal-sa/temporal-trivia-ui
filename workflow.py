@@ -7,9 +7,12 @@ from temporalio import activity, exceptions
 
 @dataclass
 class TriviaWorkflowInput:
+    Category: str
     NumberOfPlayers: int
     NumberOfQuestions: int
     AnswerTimeLimit: int
+    StartTimeLimit: int
+    ResultTimeLimit: int
 
 @dataclass
 class PlayerWorkflowInput:

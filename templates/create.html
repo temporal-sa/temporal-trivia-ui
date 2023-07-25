@@ -2,15 +2,109 @@
 
 {% block content %}
 
+<head>
+  <style>
+    select {
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      padding: 12px 20px;
+      background-color: black;
+      color: white;
+      width: 100%;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      border: none;
+    }
+
+    td {
+      padding: 10px;
+      text-align: center;
+      border: none;
+    }
+
+    .center {
+      margin: auto;
+      width: 50%;
+      padding: 10px;
+    }
+
+    label {
+      display: block;
+      text-align: center;
+    }
+  </style>
+</head>
+
 <body>
-<h2>Create the Game {{ game_id }}</h2>
-<form action="/create_game" method="post">
-  <label for="username">Enter your username:</label><br>
+<h2 class="center">Create the Game {{ game_id }}</h2>
+<form class="center" action="/create_game" method="post">
+  <table>
+    <tr>
+      <td>
+        <label for="category">Category:</label>
+        <select id="category" name="category">
+          <option value="general">General</option>
+          <option value="software_engineering">Software Engineering</option>
+          <option value="science">Science</option>
+          <option value="geography">Geography</option>
+          <option value="movies">Movies</option>
+          <option value="cartoons">Cartoons</option>
+          <option value="video_games">Video Games</option>
+          <option value="random">Random</option>
+        </select>
+      </td>
+      <td>
+        <label for="questions">Questions:</label>
+        <select id="questions" name="questions">
+          {% for i in range(1, 11) %}
+          <option value="{{ i }}">{{ i }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <label for="players">Players:</label>
+        <select id="players" name="players">
+          {% for i in range(1, 11) %}
+          <option value="{{ i }}">{{ i }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <label for="answerTimeLimit">Answer Time Limit (seconds):</label>
+        <select id="answerTimeLimit" name="answerTimeLimit">
+          {% for i in range(5, 31, 5) %}
+          <option value="{{ i }}">{{ i }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <label for="resultTimeLimit">Result Time Limit (seconds):</label>
+        <select id="resultTimeLimit" name="resultTimeLimit">
+          {% for i in range(5, 21, 5) %}
+          <option value="{{ i }}">{{ i }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <label for="startTimeLimit">Start Time Limit (minutes):</label>
+        <select id="startTimeLimit" name="startTimeLimit">
+          {% for i in range(1, 6) %}
+          <option value="{{ i }}">{{ i }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+  </table>
+  <label for="username">Enter your player name:</label>
   <input type="text" id="username" name="username"><br>
   <input type="submit" class="btn btn-dark my-3" value="Create">
 </form>
-
 </body>
 
 {% endblock %}
-

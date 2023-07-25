@@ -53,16 +53,26 @@ async def update_players(game_id):
 async def create_game():
     if request.method == 'POST':
         username = request.form['username']
-        number_players = 2 
+        category = request.form.get('category')
+        number_questions = int(request.form.get('questions'))
+        number_players = int(request.form.get('players'))
+        answer_time_limit = int(request.form.get('answerTimeLimit'))
+        result_time_limit = int(request.form.get('resultTimeLimit'))
+        start_time_limit = int(request.form.get('startTimeLimit')) * 60
+
+        print(category,number_questions,number_players,answer_time_limit,result_time_limit,start_time_limit )
         game_id = str(uuid.uuid4().int)[:6] 
         games[game_id] = {"users": [], "answers": []}
         games[game_id]["number_players"] = number_players
 
         client = await get_client()
         trivia_game_input = TriviaWorkflowInput(
+            Category=category,
             NumberOfPlayers=number_players,
-            NumberOfQuestions=2,
-            AnswerTimeLimit=30,
+            NumberOfQuestions=number_questions,
+            AnswerTimeLimit=answer_time_limit,
+            StartTimeLimit=start_time_limit,
+            ResultTimeLimit=result_time_limit,
         )  
 
         await client.start_workflow(
@@ -220,25 +230,23 @@ async def play(game_id):
     progress = await trivia_workflow.query("getProgress")
     i=str(progress["currentQuestion"])
     question = questions[i]["question"]
-    answer = questions[i]["answer"]
     choices = questions[i]["multipleChoiceAnswers"]
 
     if request.method == 'GET':
         return render_template('play.html', question=question, choices=choices, game_id=game_id)
     else:
         choice = request.form['choice']
+        choice_lower = choice.lower()
 
         AnswerSignalInput = AnswerSignal(
             action="Answer",
             player=session['username'],
             question=int(i),
-            answer=choice
-        )    
-
+            answer=choice_lower
+        )   
+        
         if "answers" not in games[game_id]:
             games[game_id]["answers"] = {}
-
-        await trivia_workflow.signal("answer-signal", AnswerSignalInput)
 
         index = int(i)
         while len(games[game_id]["answers"]) <= index:
@@ -246,9 +254,27 @@ async def play(game_id):
         games[game_id]["answers"][index][session['username']] = {
             'choice': choice,
             'correct': questions[i]['answer']
-        }           
+        }          
 
-        return render_template('results.html', results=games[game_id]["answers"][index], question_number=i, question=question, choices=choices, answer=answer, game_id=game_id, stage=progress["stage"])
+        await trivia_workflow.signal("answer-signal", AnswerSignalInput)         
+
+        return jsonify({'status': 'success'})
+
+@app.route('/<game_id>/<choice>/results')
+async def results(game_id,choice):
+    client = await get_client()
+    trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+    questions = games[game_id]["questions"]
+
+    progress = await trivia_workflow.query("getProgress")
+    i=str(progress["currentQuestion"])
+    question = questions[i]["question"]
+    answer = questions[i]["answer"]
+    choices = questions[i]["multipleChoiceAnswers"]
+
+    index = int(i)
+
+    return render_template('results.html', results=games[game_id]["answers"][index], question_number=i, question=question, choices=choices, answer=answer, game_id=game_id, stage=progress["stage"])
 
 @app.route('/<game_id>/end')
 async def end(game_id):
