@@ -41,9 +41,9 @@
   <tr style="background-color: {% if choice == answer %}#98fb98{% else %}#FFFFFF{% endif %}"> <!-- light green for correct answer and light grey for wrong ones -->
     <td>{{ choice }}: {{ choices[choice] }}</td>
     <td>
-      {% for result in results %}
-      {% if result.choice == choice %}{{ result.username }}{% endif %}
-      {% endfor %}
+    {% for player, result in results.items() %}
+      {% if result["choice"] == choice %}{{ player }}{% endif %}
+    {% endfor %} 
     </td>
   </tr>
   {% endfor %}
@@ -51,11 +51,9 @@
 </body>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
-  console.log("HERE123");
   check();
 
   function check() {
-      console.log("HERE456");
       fetch('/{{ game_id }}/{{ question_number }}/check_progress')
           .then(response => response.json())
           .then(data => {
