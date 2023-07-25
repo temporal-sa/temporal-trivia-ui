@@ -33,6 +33,10 @@
     .clickable-row {
       cursor: pointer;
     }
+    
+    .selected-choice {
+      background-color: lightgreen;
+    }
   </style>
 </head>
 <body>
@@ -55,8 +59,20 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   $('.clickable-row').click(function() {
-    $('#selectedChoice').val($(this).data('choice'));
-    $('#choiceForm').submit();
+    if (!$(this).hasClass('choice-made')) {
+      $('.clickable-row').addClass('choice-made');
+      $(this).addClass('selected-choice');
+      var choice = $(this).data('choice');
+      var checkResultsInterval = setInterval(function() {
+        $.get('/{{ game_id }}/check_results', function(data) {
+          if (data.ready) {
+            clearInterval(checkResultsInterval);
+            $('#selectedChoice').val(choice);
+            $('#choiceForm').submit();
+          }
+        });
+      }, 1000);
+    }
   }); 
 </script>
 </body>

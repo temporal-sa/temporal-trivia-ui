@@ -167,7 +167,7 @@ def get_player_count(game_id):
 
     return jsonify({'count': len(game["users"]), 'users': game["users"], 'number_players': games[game_id]["number_players"]})
 
-@app.route('/<game_id>/get_results_ready')
+@app.route('/<game_id>/check_results')
 async def get_results_ready(game_id):
     client = await get_client()  
 
