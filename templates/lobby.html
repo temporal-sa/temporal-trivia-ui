@@ -58,7 +58,7 @@
             .then(response => response.json())
             .then(data => {
                 console.log("Current player count: " + data);
-                if(data.count >= 2) {
+                if(data.count >= data.number_players) {
                     console.log("Player count is 2 or more. Redirecting to start page.");
                     clearInterval(interval); // stop the interval
                     window.location.href = '/{{ game_id }}/start'; // redirect to start page

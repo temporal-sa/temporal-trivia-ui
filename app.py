@@ -52,14 +52,16 @@ async def update_players(game_id):
 @app.route('/create_game', methods=['GET', 'POST'])
 async def create_game():
     if request.method == 'POST':
-        username = request.form['username']    
+        username = request.form['username']
+        number_players = 2 
         game_id = str(uuid.uuid4().int)[:6] 
-        games[game_id] = {"users": [], "current_question": None, "answers": []}
+        games[game_id] = {"users": [], "answers": []}
+        games[game_id]["number_players"] = number_players
 
         client = await get_client()
         trivia_game_input = TriviaWorkflowInput(
-            NumberOfPlayers=2,
-            NumberOfQuestions=5,
+            NumberOfPlayers=number_players,
+            NumberOfQuestions=2,
             AnswerTimeLimit=30,
         )  
 
@@ -94,10 +96,10 @@ async def create_game():
         session['username'] = username
         session['game_id'] = game_id
 
-        if len(games[game_id]["users"]) >= 2:
+        if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
             return redirect(url_for('start', game_id=game_id, player=username))
         else:
-            return redirect(url_for('lobby', game_id=game_id, player=username))
+            return redirect(url_for('lobby', game_id=game_id, player=username, number_players=games[game_id]["number_players"]))
     else:
         return render_template('create.html')
 
@@ -148,7 +150,7 @@ async def join(game_id):
         session['username'] = username
         session['game_id'] = game_id
  
-        if len(games[game_id]["users"]) >= 2:
+        if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
             return redirect(url_for('start', game_id=game_id, player=username))
         else:
             return redirect(url_for('lobby', game_id=game_id, player=username))
@@ -156,14 +158,26 @@ async def join(game_id):
         return render_template('join.html', game_id=game_id)
 
 @app.route('/<game_id>/lobby')
-def lobby(game_id):
+def lobby(game_id):    
     return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id)
 
 @app.route('/<string:game_id>/get_player_count', methods=['GET'])
 def get_player_count(game_id):
     game = games[game_id]
 
-    return jsonify({'count': len(game["users"]), 'users': game["users"]})
+    return jsonify({'count': len(game["users"]), 'users': game["users"], 'number_players': games[game_id]["number_players"]})
+
+@app.route('/<game_id>/get_results_ready')
+async def get_results_ready(game_id):
+    client = await get_client()  
+
+    trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+    progress = await trivia_workflow.query("getProgress")  
+    
+    if progress["stage"] == "result":
+        return jsonify({'ready': True})
+    else:
+        return jsonify({'ready': False})
 
 @app.route('/<game_id>/check_ready', methods=['GET'])
 async def check_ready(game_id):
@@ -232,15 +246,9 @@ async def play(game_id):
         games[game_id]["answers"][index][session['username']] = {
             'choice': choice,
             'correct': questions[i]['answer']
-        }  
+        }           
 
-        print(games[game_id]["answers"])          
-
-        return render_template('results.html', results=games[game_id]["answers"][index], question_number=i, question=question, choices=choices, answer=answer, game_id=game_id)
-
-#@app.route('/<game_id>/results')
-#def results(game_id):
-#    return render_template('results.html', results=games[game_id]["answers"][i], question=games[game_id]["current_question"], game_id=game_id)
+        return render_template('results.html', results=games[game_id]["answers"][index], question_number=i, question=question, choices=choices, answer=answer, game_id=game_id, stage=progress["stage"])
 
 @app.route('/<game_id>/end')
 async def end(game_id):
