@@ -7,6 +7,7 @@ authors = ["ktenzer <keith.tenzer@temporal.io>"]
 [tool.poetry.dependencies]
 python = "^3.11"
 flask = {extras = ["async"], version = "^2.2.3"}
+qrcode = "^7.4.2"
 
 [tool.poetry.group.encryption]
 optional = true

@@ -10,9 +10,9 @@ class TriviaWorkflowInput:
     Category: str
     NumberOfPlayers: int
     NumberOfQuestions: int
-    AnswerTimeLimit: int
-    StartTimeLimit: int
-    ResultTimeLimit: int
+    #AnswerTimeLimit: int
+    #StartTimeLimit: int
+    #ResultTimeLimit: int
 
 @dataclass
 class PlayerWorkflowInput:

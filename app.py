@@ -3,7 +3,8 @@ import os
 import uuid
 from client import get_client
 from workflow import TriviaWorkflowInput, PlayerWorkflowInput, StartGameSignal, AnswerSignal
-
+import qrcode
+import qrcode.image.svg
 import re
 
 app = Flask(__name__)
@@ -18,12 +19,11 @@ async def home():
         handle = client.get_workflow_handle(wf.id, run_id=wf.run_id)
 
         desc = await handle.describe()
+        regex = re.search(r'(?<=trivia-game-)\d+$', wf.id)
 
-        if (desc.status == 1):
-            regex = re.search(r'(?<=trivia-game-)\d+$', wf.id)
-
-            if regex:
-                game_id = regex.group()
+        if regex:
+            game_id = regex.group() 
+        if (desc.status == 1):               
                 trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
                 players = await trivia_workflow.query("getPlayers")
                 player_names = []
@@ -32,22 +32,27 @@ async def home():
                     games[game_id] = {}
                     games[game_id]["users"] = {}
                 for player in players:
-                    player_names.append(player)          
+                    player_names.append(player)   
+
+                progress = await trivia_workflow.query("getProgress")
+                if progress["stage"] != "start":
+                    games[game_id]["started"] = True
+
                 games[game_id]["users"] = player_names
+        else:
+            if game_id in games:
+                del games[game_id]
+                
+                qr_file = f'static/qr/qr-{game_id}.gif'
+                if os.path.isfile(qr_file):
+                    os.remove(qr_file)      
 
     return render_template('index.html', games=games)
 
-async def update_players(game_id):
-    client = await get_client()
-
-    trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-    players = await trivia_workflow.query("getPlayers")
-    player_names = []
-    if game_id not in games:
-        games[game_id]["users"] = {}
-    for player in players:
-        player_names.append(player)          
-    games[game_id]["users"] = player_names
+def create_qr_code(game_id):
+    img = qrcode.make(f'https://triviav2.tmprl-demo.cloud/{game_id}/join')
+    with open(f'static/qr/qr-{game_id}.gif', 'wb') as qr:
+        img.save(qr)
 
 @app.route('/create_game', methods=['GET', 'POST'])
 async def create_game():
@@ -56,11 +61,10 @@ async def create_game():
         category = request.form.get('category')
         number_questions = int(request.form.get('questions'))
         number_players = int(request.form.get('players'))
-        answer_time_limit = int(request.form.get('answerTimeLimit'))
-        result_time_limit = int(request.form.get('resultTimeLimit'))
-        start_time_limit = int(request.form.get('startTimeLimit')) * 60
+        #answer_time_limit = int(request.form.get('answerTimeLimit'))
+        #result_time_limit = int(request.form.get('resultTimeLimit'))
+        #start_time_limit = int(request.form.get('startTimeLimit')) * 60
 
-        print(category,number_questions,number_players,answer_time_limit,result_time_limit,start_time_limit )
         game_id = str(uuid.uuid4().int)[:6] 
         games[game_id] = {"users": [], "answers": []}
         games[game_id]["number_players"] = number_players
@@ -70,9 +74,9 @@ async def create_game():
             Category=category,
             NumberOfPlayers=number_players,
             NumberOfQuestions=number_questions,
-            AnswerTimeLimit=answer_time_limit,
-            StartTimeLimit=start_time_limit,
-            ResultTimeLimit=result_time_limit,
+            #AnswerTimeLimit=answer_time_limit,
+            #StartTimeLimit=start_time_limit,
+            #ResultTimeLimit=result_time_limit,
         )  
 
         await client.start_workflow(
@@ -81,6 +85,8 @@ async def create_game():
             id=f'trivia-game-{game_id}',
             task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
         )
+
+        create_qr_code(game_id)
 
         player_input = PlayerWorkflowInput(
             GameWorkflowId=f'trivia-game-{game_id}',
@@ -116,6 +122,8 @@ async def create_game():
 @app.route('/<game_id>/start')
 async def start(game_id):
     client = await get_client()
+
+    games[game_id]["started"] = True
 
     StartGameSignalInput = StartGameSignal(
         action="StartGame"
@@ -244,7 +252,7 @@ async def play(game_id):
             question=int(i),
             answer=choice_lower
         )   
-        
+
         if "answers" not in games[game_id]:
             games[game_id]["answers"] = {}
 
@@ -276,15 +284,32 @@ async def results(game_id,choice):
 
     return render_template('results.html', results=games[game_id]["answers"][index], question_number=i, question=question, choices=choices, answer=answer, game_id=game_id, stage=progress["stage"])
 
-@app.route('/<game_id>/end')
-async def end(game_id):
+@app.route('/<game_id>/view')
+async def view(game_id):  
     client = await get_client()
-   
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+    players = await trivia_workflow.query("getPlayers")
 
-    players = await trivia_workflow.query("getPlayers")    
     return render_template('end.html', players=players, game_id=game_id)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/<game_id>/end')
+async def end(game_id):  
+    client = await get_client()
+    trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+
+    players = await trivia_workflow.query("getPlayers")
+    progress = await trivia_workflow.query("getProgress")
+
+    if progress["stage"] == "scores":
+        if game_id in games:
+            del games[game_id]   
+
+    qr_file = f'static/qr/qr-{game_id}.gif'
+    if os.path.isfile(qr_file):
+        os.remove(qr_file)
+
+    return render_template('end.html', players=players, game_id=game_id)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True) 
 

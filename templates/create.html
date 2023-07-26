@@ -4,14 +4,17 @@
 
 <head>
   <style>
-    select {
+    select, input[type="text"], .btn {
       border: 2px solid #ccc;
       border-radius: 4px;
       box-sizing: border-box;
       padding: 12px 20px;
+      width: 68%;
+    }
+
+    select {
       background-color: black;
       color: white;
-      width: 100%;
     }
 
     table {
@@ -24,6 +27,10 @@
       padding: 10px;
       text-align: center;
       border: none;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
     }
 
     .center {
@@ -33,20 +40,36 @@
     }
 
     label {
-      display: block;
-      text-align: center;
+      text-align: right;
+      width: 30%;
+      margin-right: 10px;
     }
+
+    .btn {
+      background-color: black;
+      color: white;
+      border: none;
+    }
+    h2 {    
+      text-align: left;
+      width: 70%;
+      padding: 0px 40px;
+    }    
   </style>
 </head>
 
 <body>
-<h2 class="center">Create the Game {{ game_id }}</h2>
 <form class="center" action="/create_game" method="post">
   <table>
     <tr>
+      <td style="min-width: 300px;">
+        <h2>Create the Game {{ game_id }}</h2>
+      </td>
+    </tr>
       <td>
         <label for="category">Category:</label>
         <select id="category" name="category">
+          <option value="random">Random</option>
           <option value="general">General</option>
           <option value="software_engineering">Software Engineering</option>
           <option value="science">Science</option>
@@ -54,7 +77,8 @@
           <option value="movies">Movies</option>
           <option value="cartoons">Cartoons</option>
           <option value="video_games">Video Games</option>
-          <option value="random">Random</option>
+          <option value="random">Cities</option>
+          <option value="random">Countries</option>
         </select>
       </td>
       <td>
@@ -76,35 +100,17 @@
     </tr>
     <tr>
       <td>
-        <label for="answerTimeLimit">Answer Time Limit (seconds):</label>
-        <select id="answerTimeLimit" name="answerTimeLimit">
-          {% for i in range(5, 31, 5) %}
-          <option value="{{ i }}">{{ i }}</option>
-          {% endfor %}
-        </select>
+        <label for="username">Player name:</label>
+        <input type="text" id="username" name="username" required>
       </td>
-      <td>
-        <label for="resultTimeLimit">Result Time Limit (seconds):</label>
-        <select id="resultTimeLimit" name="resultTimeLimit">
-          {% for i in range(5, 21, 5) %}
-          <option value="{{ i }}">{{ i }}</option>
-          {% endfor %}
-        </select>
-      </td>
-      <td>
-        <label for="startTimeLimit">Start Time Limit (minutes):</label>
-        <select id="startTimeLimit" name="startTimeLimit">
-          {% for i in range(1, 6) %}
-          <option value="{{ i }}">{{ i }}</option>
-          {% endfor %}
-        </select>
+      <td colspan="2" style="display: flex; justify-content: space-between; align-items: center;">
+        <div></div>
+        <input type="submit" class="btn btn-dark my-3" value="Create">
       </td>
     </tr>
-  </table>
-  <label for="username">Enter your player name:</label>
-  <input type="text" id="username" name="username" required><br>
-  <input type="submit" class="btn btn-dark my-3" value="Create">
+  </table>  
 </form>
 </body>
 
 {% endblock %}
+

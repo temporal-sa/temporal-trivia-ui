@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: trivia-tmprl-demo-cloud
+spec:
+  secretName: trivia-tmprl-demo-cloud-tls
+  privateKey:
+    rotationPolicy: Always
+  dnsNames:
+  - triviav2.tmprl-demo.cloud
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+    group: cert-manager.io

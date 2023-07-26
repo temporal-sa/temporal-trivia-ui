@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal-trivia-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temporal-trivia-ui
+  template:
+    metadata:
+      labels:
+        app: temporal-trivia-ui
+    spec:
+      containers:
+      - name: workflow
+        image: ktenzer/temporal-trivia-ui:v1.1
+        imagePullPolicy: Always
+        ports:
+        - name: ui
+          containerPort: 5000
+        env:
+        - name: TEMPORAL_HOST_URL
+          value: temporal-trivia.sdvdw.tmprl.cloud:7233
+        - name: TEMPORAL_NAMESPACE
+          value: temporal-trivia.sdvdw
+        - name: TEMPORAL_TASK_QUEUE
+          value: temporal-trivia-v2
+        - name: TEMPORAL_MTLS_TLS_CERT
+          value: /etc/certs/tls.crt
+        - name: TEMPORAL_MTLS_TLS_KEY
+          value: /etc/certs/tls.key
+        volumeMounts:
+        - mountPath: /etc/certs
+          name: certs
+      volumes:
+      - name: certs
+        secret:
+          defaultMode: 420
+          secretName: temporal-trivia-tls
