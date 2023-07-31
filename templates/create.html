@@ -5,8 +5,8 @@
 <head>
   <style>
     select, input[type="text"], .btn {
-      border: 2px solid #ccc;
-      border-radius: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;     
       box-sizing: border-box;
       padding: 12px 20px;
       width: 68%;
@@ -20,6 +20,7 @@
     table {
       border-collapse: collapse;
       width: 100%;
+      max-width: 700px;
       border: none;
     }
 
@@ -45,13 +46,18 @@
       margin-right: 10px;
     }
 
+    #customCategoryInput {
+      display: none;
+      margin-left: 10px;
+    }
+
     .btn {
       background-color: black;
       color: white;
       border: none;
     }
     h2 {    
-      text-align: left;
+      text-align: right;
       width: 70%;
       padding: 0px 40px;
     }    
@@ -59,16 +65,12 @@
 </head>
 
 <body>
+<h2>Create Game {{ game_id }}</h2>
 <form class="center" action="/create_game" method="post">
   <table>
-    <tr>
-      <td style="min-width: 300px;">
-        <h2>Create the Game {{ game_id }}</h2>
-      </td>
-    </tr>
       <td>
         <label for="category">Category:</label>
-        <select id="category" name="category">
+        <select id="category" name="category" onchange="handleCategoryChange(this)">
           <option value="random">Random</option>
           <option value="general">General</option>
           <option value="software_engineering">Software Engineering</option>
@@ -77,9 +79,11 @@
           <option value="movies">Movies</option>
           <option value="cartoons">Cartoons</option>
           <option value="video_games">Video Games</option>
-          <option value="random">Cities</option>
-          <option value="random">Countries</option>
+          <option value="cities">Cities</option>
+          <option value="countries">Countries</option>
+          <option value="custom">Custom</option>
         </select>
+        <input id="customCategoryInput" name="customCategory" type="text">          
       </td>
       <td>
         <label for="questions">Questions:</label>
@@ -100,16 +104,29 @@
     </tr>
     <tr>
       <td>
-        <label for="username">Player name:</label>
-        <input type="text" id="username" name="username" required>
+        <label for="player">Player name:</label>
+        <input type="text" id="player" name="player" required>
       </td>
       <td colspan="2" style="display: flex; justify-content: space-between; align-items: center;">
         <div></div>
+        {% if error %}
+        <p style="color: red;">{{ error }}</p>
+        {% endif %}        
         <input type="submit" class="btn btn-dark my-3" value="Create">
       </td>
     </tr>
   </table>  
 </form>
+<script>
+  function handleCategoryChange(selectElement) {
+    var customInput = document.getElementById('customCategoryInput');
+    if (selectElement.value === 'custom') {
+      customInput.style.display = 'inline-block';
+    } else {
+      customInput.style.display = 'none';
+    }
+  }
+</script>
 </body>
 
 {% endblock %}

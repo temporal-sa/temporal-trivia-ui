@@ -4,15 +4,16 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from temporalio import activity, exceptions
+from typing import Optional
 
 @dataclass
 class TriviaWorkflowInput:
-    Category: str
     NumberOfPlayers: int
     NumberOfQuestions: int
-    #AnswerTimeLimit: int
-    #StartTimeLimit: int
-    #ResultTimeLimit: int
+    AnswerTimeLimit: int
+    StartTimeLimit: int
+    ResultTimeLimit: int
+    Category: Optional[str] = None
 
 @dataclass
 class PlayerWorkflowInput:

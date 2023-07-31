@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import os
 import uuid
 from client import get_client
+from temporalio.client import WorkflowFailureError
 from workflow import TriviaWorkflowInput, PlayerWorkflowInput, StartGameSignal, AnswerSignal
 import qrcode
 import qrcode.image.svg
@@ -21,6 +22,7 @@ async def home():
         desc = await handle.describe()
         regex = re.search(r'(?<=trivia-game-)\d+$', wf.id)
 
+        game_id = None
         if regex:
             game_id = regex.group() 
         if (desc.status == 1):               
@@ -40,7 +42,7 @@ async def home():
 
                 games[game_id]["users"] = player_names
         else:
-            if game_id in games:
+            if game_id is not None and game_id in games:
                 del games[game_id]
                 
                 qr_file = f'static/qr/qr-{game_id}.gif'
@@ -57,27 +59,38 @@ def create_qr_code(game_id):
 @app.route('/create_game', methods=['GET', 'POST'])
 async def create_game():
     if request.method == 'POST':
-        username = request.form['username']
-        category = request.form.get('category')
+        player = request.form['player']
+        if not re.match('^[a-zA-Z0-9]+$', player):
+            return render_template('create.html', error='Player can only contain letters and numbers without spaces.')        
+
         number_questions = int(request.form.get('questions'))
         number_players = int(request.form.get('players'))
-        #answer_time_limit = int(request.form.get('answerTimeLimit'))
-        #result_time_limit = int(request.form.get('resultTimeLimit'))
-        #start_time_limit = int(request.form.get('startTimeLimit')) * 60
+
+        category_dropdown = request.form.get('category')
+        category_custom = request.form.get('customCategory')
+
+        if category_dropdown == 'custom':
+            category = category_custom
+        else:
+            category = category_dropdown
+
+        if category == 'random':
+            category = ""    
 
         game_id = str(uuid.uuid4().int)[:6] 
         games[game_id] = {"users": [], "answers": []}
         games[game_id]["number_players"] = number_players
 
         client = await get_client()
+
         trivia_game_input = TriviaWorkflowInput(
             Category=category,
             NumberOfPlayers=number_players,
             NumberOfQuestions=number_questions,
-            #AnswerTimeLimit=answer_time_limit,
-            #StartTimeLimit=start_time_limit,
-            #ResultTimeLimit=result_time_limit,
-        )  
+            AnswerTimeLimit=60,
+            StartTimeLimit=300,
+            ResultTimeLimit=10,
+        )               
 
         await client.start_workflow(
             "TriviaGameWorkflow",
@@ -90,15 +103,19 @@ async def create_game():
 
         player_input = PlayerWorkflowInput(
             GameWorkflowId=f'trivia-game-{game_id}',
-            Player=username,
+            Player=player,
         )  
 
-        await client.execute_workflow(
-            "AddPlayerWorkflow",
-            player_input,
-            id=f'player-{username}-{game_id}',
-            task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
-        )
+        try:
+            await client.execute_workflow(
+                "AddPlayerWorkflow",
+                player_input,
+                id=f'player-{player}-{game_id}',
+                task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+            )
+        except:
+            return render_template('create.html', error='Player name failed moderation')
+            
 
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
         players = await trivia_workflow.query("getPlayers")
@@ -109,15 +126,15 @@ async def create_game():
             player_names.append(player)          
         games[game_id]["users"] = player_names
 
-        session['username'] = username
+        session['username'] = player
         session['game_id'] = game_id
 
         if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
-            return redirect(url_for('start', game_id=game_id, player=username))
+            return redirect(url_for('start', game_id=game_id, player=player))
         else:
-            return redirect(url_for('lobby', game_id=game_id, player=username, number_players=games[game_id]["number_players"]))
+            return redirect(url_for('lobby', game_id=game_id, player=player, number_players=games[game_id]["number_players"]))
     else:
-        return render_template('create.html')
+        return render_template('create.html')        
 
 @app.route('/<game_id>/start')
 async def start(game_id):
@@ -140,22 +157,27 @@ async def start(game_id):
 @app.route('/<game_id>/join', methods=['GET', 'POST'])
 async def join(game_id):
     if request.method == 'POST':
-        username = request.form['username']
+        player = request.form['player']
+        if not re.match('^[a-zA-Z0-9]+$', player):
+            return render_template('join.html', game_id=game_id, error='Player can only contain letters and numbers without spaces.')        
 
         player_input = PlayerWorkflowInput(
             GameWorkflowId=f'trivia-game-{game_id}',
-            Player=username,
+            Player=player,
         )  
 
         client = await get_client()
 
-        await client.execute_workflow(
+        try:
+            await client.execute_workflow(
             "AddPlayerWorkflow",
             player_input,
-            id=f'player-{username}-{game_id}',
+            id=f'player-{player}-{game_id}',
             task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
-        )
-
+            )
+        except WorkflowFailureError:
+            return render_template('join.html', game_id=game_id, error='Player name failed moderation')
+        
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
         players = await trivia_workflow.query("getPlayers")
         player_names = []
@@ -165,19 +187,19 @@ async def join(game_id):
             player_names.append(player)          
         games[game_id]["users"] = player_names
 
-        session['username'] = username
+        session['username'] = player
         session['game_id'] = game_id
  
         if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
-            return redirect(url_for('start', game_id=game_id, player=username))
+            return redirect(url_for('start', game_id=game_id, player=player))
         else:
-            return redirect(url_for('lobby', game_id=game_id, player=username))
+            return redirect(url_for('lobby', game_id=game_id, player=player, number_players=games[game_id]["number_players"]))
     else:
         return render_template('join.html', game_id=game_id)
 
 @app.route('/<game_id>/lobby')
 def lobby(game_id):    
-    return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id)
+    return render_template('lobby.html', users=games[game_id]["users"], game_id=game_id, number_players=games[game_id]["number_players"])
 
 @app.route('/<string:game_id>/get_player_count', methods=['GET'])
 def get_player_count(game_id):

@@ -1,12 +1,33 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
+<style>
+    .top-align {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      gap: 20px; /* Add space between elements */
+      padding-top: 20px; /* Add some padding at the top */
+    }
+    select, input[type="text"], .btn {
+      max-width: 700px;
+      border: 1px solid #ccc;
+      border-radius: 4px;     
+      box-sizing: border-box;
+      padding: 12px 20px;
+      width: 68%;
+    }    
+</style>
 <body>
 <h2>Join the Game {{ game_id }}</h2>
 <form action="/{{ game_id }}/join" method="post">
-  <label for="username">Enter your username:</label><br>
-  <input type="text" id="username" name="username"><br>
+  <label for="player">Enter your player name:</label><br>
+  <input type="text" id="player" name="player" required><br>
+  {% if error %}
+  <p style="color: red;">{{ error }}</p>
+  {% endif %}
   <input type="submit" class="btn btn-dark my-3" value="Join">
 </form>
 

@@ -8,7 +8,8 @@
       border-collapse: separate;
       border-spacing: 0;
       margin: auto;
-      width: 50%;
+      width: 100%;
+      max-width: 700px;      
       border: 1px solid black;
       border-radius: 10px;
       overflow: hidden;
@@ -34,7 +35,8 @@
 <body>
 <img src="static/qr/qr-{{ game_id }}.gif" alt="Join" width="100" height="100"> 
 <h2 style="text-align: center;">Lobby</h2>
-<table>
+<h3 id="timer" style="text-align: center;">Time left: 60 seconds</h3>
+<table id="playerTable">
   <tr>
     <th>Players</th>
   </tr>
@@ -44,29 +46,45 @@
   </tr>
   {% endfor %}
 </table>
-<p style="text-align: center;">Waiting for more players to join...</p>
+<p style="text-align: center;">Waiting for {{ number_players }} players to join...</p>
 </body>
 <script>
     var start = Date.now(); // get the current time in milliseconds
+    var gameStartInSeconds = 60;
     var interval = setInterval(function() {
-        var elapsed = Date.now() - start; // calculate the elapsed time
+        var elapsed = (Date.now() - start) / 1000; // calculate the elapsed time in seconds
+        var remainingTime = gameStartInSeconds - Math.floor(elapsed);
+        document.getElementById("timer").innerText = "Time left: " + remainingTime + " seconds";
         console.log("Elapsed time: " + elapsed);
-        if(elapsed > 30000) { // if 30 seconds have passed
-            console.log("10 seconds have passed. Redirecting to start page.");
+        if(elapsed > 60) { // if 60 seconds have passed
+            console.log("300 seconds have passed. Redirecting to start page.");
             clearInterval(interval); // stop the interval
             window.location.href = '/{{ game_id }}/start'; // redirect to start page
         }
         fetch('/{{ game_id }}/get_player_count')
             .then(response => response.json())
             .then(data => {
-                console.log("Current player count: " + data);
+                console.log("Current player count: " + data.count);
                 if(data.count >= data.number_players) {
                     console.log("Player count is 2 or more. Redirecting to start page.");
                     clearInterval(interval); // stop the interval
                     window.location.href = '/{{ game_id }}/start'; // redirect to start page
+                } else {
+                    var table = document.getElementById("playerTable");
+                    // clear all rows except the header
+                    while(table.rows.length > 1) {
+                        table.deleteRow(1);
+                    }
+                    // add a new row for each player
+                    data.users.forEach(function(user) {
+                        var row = table.insertRow();
+                        var cell = row.insertCell();
+                        cell.textContent = user;
+                    });
                 }
             });
     }, 1000); // run this interval every 1 second (1000 milliseconds)
 </script>
 
 {% endblock %}
+

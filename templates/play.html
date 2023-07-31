@@ -9,7 +9,7 @@
       border-spacing: 0;
       margin: auto;
       width: 100%;
-      max-width: 600px;
+      max-width: 700px;
       border: 1px solid black;
       border-radius: 10px;
       overflow: hidden;
@@ -41,6 +41,7 @@
 </head>
 <body>
 <h2 style="text-align: center;">{{ question }}</h2>
+<div id="countdown" style="text-align: center;">You have 60 seconds to choose an answer.</div>
 <form id="choiceForm" action="/{{ game_id }}/play" method="post">
   <input id="selectedChoice" type="hidden" name="choice">
   <table>
@@ -58,13 +59,37 @@
 </form>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+  var countDownDate = new Date().getTime() + 60 * 1000; // 60 seconds from now
+  var timeout = null;
+
+  // Update the count down every 1 second
+  var countdownInterval = setInterval(function() {
+    var now = new Date().getTime();
+    var distance = countDownDate - now;
+    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    document.getElementById("countdown").innerHTML = "You have " + seconds + " seconds to choose an answer.";
+    if (distance < 0) {
+      clearInterval(countdownInterval);
+      document.getElementById("countdown").innerHTML = "Time's up!";
+      // User didn't choose an answer in time. Submit the form with the default choice "e".
+      if (timeout === null) {
+        window.location.href = '/';
+        //$('#selectedChoice').val('e');
+        //timeout = setTimeout(submitChoice, 1000);
+      }
+    }
+  }, 1000);
+
+
   $('.clickable-row').click(function() {
     if (!$(this).hasClass('choice-made')) {
       $('.clickable-row').addClass('choice-made');
       $(this).addClass('selected-choice');
       var choice = $(this).data('choice');
       $('#selectedChoice').val(choice);
-      
+      // User made a choice. Stop the countdown and timeout.
+      clearInterval(countdownInterval);
+      clearTimeout(timeout);
       // Ajax form submission
       $.ajax({
         url: "/{{ game_id }}/play",
@@ -84,9 +109,10 @@
         }
       });
     }
-  }); 
+  });
 </script>
 </body>
 
 {% endblock %}
+
 
