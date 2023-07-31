@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask_session import Session
 import os
 import uuid
 from client import get_client
@@ -9,6 +10,9 @@ import qrcode.image.svg
 import re
 
 app = Flask(__name__)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 app.secret_key = 'SA_R0ck5!'
 
 games = {}
@@ -127,7 +131,6 @@ async def create_game():
         games[game_id]["users"] = player_names
 
         session['username'] = player
-        session['game_id'] = game_id
 
         if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
             return redirect(url_for('start', game_id=game_id, player=player))
@@ -188,7 +191,6 @@ async def join(game_id):
         games[game_id]["users"] = player_names
 
         session['username'] = player
-        session['game_id'] = game_id
  
         if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
             return redirect(url_for('start', game_id=game_id, player=player))

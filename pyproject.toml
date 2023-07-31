@@ -8,6 +8,7 @@ authors = ["ktenzer <keith.tenzer@temporal.io>"]
 python = "^3.11"
 flask = {extras = ["async"], version = "^2.2.3"}
 qrcode = "^7.4.2"
+flask-session = "^0.5.0"
 
 [tool.poetry.group.encryption]
 optional = true
