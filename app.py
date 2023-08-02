@@ -16,7 +16,7 @@ games = {}
 @app.route('/')
 async def home(): 
     client = await get_client()
-    async for wf in client.list_workflows("WorkflowType = 'TriviaGameWorkflow'"):
+    async for wf in client.list_workflows("ExecutionStatus='Running' and WorkflowType='TriviaGameWorkflow'"):
         handle = client.get_workflow_handle(wf.id, run_id=wf.run_id)
 
         desc = await handle.describe()
@@ -110,6 +110,7 @@ async def create_game():
         player_input = PlayerWorkflowInput(
             GameWorkflowId=f'trivia-game-{game_id}',
             Player=player,
+            NumberOfPlayers=number_players,
         )  
 
         try:
@@ -119,8 +120,8 @@ async def create_game():
                 id=f'player-{player}-{game_id}',
                 task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
             )
-        except:
-            return render_template('create.html', error='Player name failed moderation')
+        except WorkflowFailureError as e:
+            return render_template('create.html', error=e.cause)
             
 
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
@@ -169,19 +170,22 @@ async def join(game_id):
         player_input = PlayerWorkflowInput(
             GameWorkflowId=f'trivia-game-{game_id}',
             Player=player,
+            NumberOfPlayers=games[game_id]["number_players"],
         )  
 
         client = await get_client()
 
+        player_result = ""
         try:
-            await client.execute_workflow(
+            player_result = await client.execute_workflow(
             "AddPlayerWorkflow",
             player_input,
             id=f'player-{player}-{game_id}',
             task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
             )
-        except WorkflowFailureError:
-            return render_template('join.html', game_id=game_id, error='Player name failed moderation')
+            print(player_result)
+        except WorkflowFailureError as e:
+            return render_template('join.html', game_id=game_id, error=e.cause)
         
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
         players = await trivia_workflow.query("getPlayers")

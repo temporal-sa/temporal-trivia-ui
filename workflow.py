@@ -19,6 +19,7 @@ class TriviaWorkflowInput:
 class PlayerWorkflowInput:
     GameWorkflowId: int
     Player: str
+    NumberOfPlayers: int
 
 @dataclass
 class StartGameSignal:
