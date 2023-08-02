@@ -41,7 +41,7 @@
 </head>
 <body>
 <h2 style="text-align: center;">{{ question }}</h2>
-<div id="countdown" style="text-align: center;">You have 60 seconds to choose an answer.</div>
+<div id="countdown" style="text-align: center;">You have {{ answer_limit }} seconds to choose an answer.</div>
 <form id="choiceForm" action="/{{ game_id }}/play" method="post">
   <input id="selectedChoice" type="hidden" name="choice">
   <table>
@@ -59,7 +59,8 @@
 </form>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-  var countDownDate = new Date().getTime() + 60 * 1000; // 60 seconds from now
+  var answerLimitSeconds = {{ answer_limit }}; // fetch from backend
+  var countDownDate = new Date().getTime() + answerLimitSeconds * 1000; // answerLimitSeconds from now
   var timeout = null;
 
   // Update the count down every 1 second
@@ -73,9 +74,7 @@
       document.getElementById("countdown").innerHTML = "Time's up!";
       // User didn't choose an answer in time. Submit the form with the default choice "e".
       if (timeout === null) {
-        window.location.href = '/';
-        //$('#selectedChoice').val('e');
-        //timeout = setTimeout(submitChoice, 1000);
+        window.location.href = '/{{ game_id }}/X/results';
       }
     }
   }, 1000);

@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-from flask_session import Session
 import os
 import uuid
 from client import get_client
@@ -10,9 +9,6 @@ import qrcode.image.svg
 import re
 
 app = Flask(__name__)
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
 app.secret_key = 'SA_R0ck5!'
 
 games = {}
@@ -37,8 +33,8 @@ async def home():
                 if game_id not in games:
                     games[game_id] = {}
                     games[game_id]["users"] = {}
-                for player in players:
-                    player_names.append(player)   
+                for p in players:
+                    player_names.append(p)   
 
                 progress = await trivia_workflow.query("getProgress")
                 if progress["stage"] != "start":
@@ -67,11 +63,15 @@ async def create_game():
         if not re.match('^[a-zA-Z0-9]+$', player):
             return render_template('create.html', error='Player can only contain letters and numbers without spaces.')        
 
+        mode = request.form.get('mode')
         number_questions = int(request.form.get('questions'))
         number_players = int(request.form.get('players'))
-
         category_dropdown = request.form.get('category')
         category_custom = request.form.get('customCategory')
+
+        answer_limit=60
+        if mode == 'challenge':
+            answer_limit=15
 
         if category_dropdown == 'custom':
             category = category_custom
@@ -84,6 +84,8 @@ async def create_game():
         game_id = str(uuid.uuid4().int)[:6] 
         games[game_id] = {"users": [], "answers": []}
         games[game_id]["number_players"] = number_players
+        games[game_id]["started"] = False
+        games[game_id]["answer_limit"] = answer_limit
 
         client = await get_client()
 
@@ -91,7 +93,7 @@ async def create_game():
             Category=category,
             NumberOfPlayers=number_players,
             NumberOfQuestions=number_questions,
-            AnswerTimeLimit=60,
+            AnswerTimeLimit=answer_limit,
             StartTimeLimit=300,
             ResultTimeLimit=10,
         )               
@@ -126,16 +128,16 @@ async def create_game():
         player_names = []
         if game_id not in games:
             games[game_id]["users"] = {}
-        for player in players:
-            player_names.append(player)          
+        for p in players:
+            player_names.append(p)          
         games[game_id]["users"] = player_names
 
         session['username'] = player
 
         if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
-            return redirect(url_for('start', game_id=game_id, player=player))
+            return redirect(url_for('start', game_id=game_id))
         else:
-            return redirect(url_for('lobby', game_id=game_id, player=player, number_players=games[game_id]["number_players"]))
+            return redirect(url_for('lobby', game_id=game_id, number_players=games[game_id]["number_players"]))
     else:
         return render_template('create.html')        
 
@@ -143,17 +145,17 @@ async def create_game():
 async def start(game_id):
     client = await get_client()
 
-    games[game_id]["started"] = True
+    if not games[game_id]["started"] == True:
+        StartGameSignalInput = StartGameSignal(
+            action="StartGame"
+        )    
 
-    StartGameSignalInput = StartGameSignal(
-        action="StartGame"
-    )    
-
-    trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-    await trivia_workflow.signal("start-game-signal", StartGameSignalInput)
-    progress = await trivia_workflow.query("getProgress")
-    games[game_id]["number_questions"] = int(progress["numberOfQuestions"])
-    games[game_id]["question_number"] = "1"
+        trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+        await trivia_workflow.signal("start-game-signal", StartGameSignalInput)
+        progress = await trivia_workflow.query("getProgress")
+        games[game_id]["number_questions"] = int(progress["numberOfQuestions"])
+        games[game_id]["question_number"] = "1"
+        games[game_id]["started"] = True
 
     return render_template('start.html', game_id=game_id)
 
@@ -186,16 +188,16 @@ async def join(game_id):
         player_names = []
         if game_id not in games:
             games[game_id]["users"] = {}
-        for player in players:
-            player_names.append(player)          
+        for p in players:
+            player_names.append(p)          
         games[game_id]["users"] = player_names
 
         session['username'] = player
  
         if len(games[game_id]["users"]) >= games[game_id]["number_players"]:
-            return redirect(url_for('start', game_id=game_id, player=player))
+            return redirect(url_for('start', game_id=game_id))
         else:
-            return redirect(url_for('lobby', game_id=game_id, player=player, number_players=games[game_id]["number_players"]))
+            return redirect(url_for('lobby', game_id=game_id, number_players=games[game_id]["number_players"]))
     else:
         return render_template('join.html', game_id=game_id)
 
@@ -265,7 +267,7 @@ async def play(game_id):
     choices = questions[i]["multipleChoiceAnswers"]
 
     if request.method == 'GET':
-        return render_template('play.html', question=question, choices=choices, game_id=game_id)
+        return render_template('play.html', question=question, choices=choices, game_id=game_id, answer_limit=games[game_id]["answer_limit"])
     else:
         choice = request.form['choice']
         choice_lower = choice.lower()
@@ -305,6 +307,8 @@ async def results(game_id,choice):
     choices = questions[i]["multipleChoiceAnswers"]
 
     index = int(i)
+    while len(games[game_id]["answers"]) <= index:
+        games[game_id]["answers"].append({})
 
     return render_template('results.html', results=games[game_id]["answers"][index], question_number=i, question=question, choices=choices, answer=answer, game_id=game_id, stage=progress["stage"])
 

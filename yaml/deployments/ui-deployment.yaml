@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: workflow
-        image: ktenzer/temporal-trivia-ui:v1.5
+        image: ktenzer/temporal-trivia-ui:v1.6
         imagePullPolicy: Always
         ports:
         - name: ui

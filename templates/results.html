@@ -8,7 +8,8 @@
       border-collapse: separate;
       border-spacing: 0;
       margin: auto;
-      width: 50%;
+      width: 100%;
+      max-width: 700px;
       border: 1px solid black;
       border-radius: 10px;
       overflow: hidden;
@@ -42,7 +43,7 @@
     <td>{{ choice }}: {{ choices[choice] }}</td>
     <td>
     {% for player, result in results.items() %}
-      {% if result["choice"] == choice %}{{ player }}{% endif %}
+      {% if result["choice"] == choice and result["choice"] in ["A", "B", "C", "D"] %}{{ player }}{% endif %}
     {% endfor %} 
     </td>
   </tr>

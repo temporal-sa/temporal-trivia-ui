@@ -19,7 +19,7 @@
 
     table {
       border-collapse: collapse;
-      width: 100%;
+      width: 160%;
       max-width: 700px;
       border: none;
     }
@@ -32,6 +32,7 @@
       flex-direction: row;
       justify-content: center;
       align-items: center;
+      white-space: normal;
     }
 
     .center {
@@ -57,17 +58,40 @@
       border: none;
     }
     h2 {    
-      text-align: right;
-      width: 70%;
+      text-align: center;
+      width: 100%;
       padding: 0px 40px;
-    }    
+    } 
+    .table-container {
+      display: flex;
+      justify-content: center;
+    }
+    .error-container {
+      text-align: center;
+      width: 100%;
+      padding-top: 5%; 
+    }
+
+    .error-message {
+      display: inline-block;
+    }
+    
+
+    
   </style>
 </head>
 
 <body>
 <h2>Create Game {{ game_id }}</h2>
-<form class="center" action="/create_game" method="post">
+<form class="table-container" action="/create_game" method="post">
   <table>
+    <td>
+      <label for="mode">Mode:</label>
+      <select id="mode" name="mode">
+        <option value="normal">Normal</option>
+        <option value="challenge">Challenge</option>
+      </select>
+    </td>    
       <td>
         <label for="category">Category:</label>
         <select id="category" name="category" onchange="handleCategoryChange(this)">
@@ -108,11 +132,17 @@
         <input type="text" id="player" name="player" required>
       </td>
       <td colspan="2" style="display: flex; justify-content: space-between; align-items: center;">
-        <div></div>
-        {% if error %}
-        <p style="color: red;">{{ error }}</p>
-        {% endif %}        
+        <div></div>     
         <input type="submit" class="btn btn-dark my-3" value="Create">
+      </td>
+      <td>
+        <div class="error-container">
+          <div class="error-message">
+            {% if error %}
+            <p style="color: red;">{{ error }}</p>
+            {% endif %}
+          </div>  
+        </div>  
       </td>
     </tr>
   </table>  
