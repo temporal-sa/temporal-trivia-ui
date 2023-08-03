@@ -7,6 +7,7 @@ from workflow import TriviaWorkflowInput, PlayerWorkflowInput, StartGameSignal, 
 import qrcode
 import qrcode.image.svg
 import re
+from typing import List, Dict
 
 app = Flask(__name__)
 app.secret_key = 'SA_R0ck5!'
@@ -27,7 +28,14 @@ async def home():
             game_id = regex.group() 
         if (desc.status == 1):               
                 trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-                players = await trivia_workflow.query("getPlayers")
+                
+                players: List[Dict] = []
+                while not players:
+                    try:
+                        players = await trivia_workflow.query("getPlayers")
+                    except:
+                        pass
+
                 player_names = []
 
                 if game_id not in games:
@@ -35,8 +43,14 @@ async def home():
                     games[game_id]["users"] = {}
                 for p in players:
                     player_names.append(p)   
+                
+                progress: List[Dict] = []
+                while not progress:
+                    try:
+                        progress = await trivia_workflow.query("getProgress")
+                    except:
+                        pass
 
-                progress = await trivia_workflow.query("getProgress")
                 if progress["stage"] != "start":
                     games[game_id]["started"] = True
 
@@ -125,7 +139,13 @@ async def create_game():
             
 
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-        players = await trivia_workflow.query("getPlayers")
+        players: List[Dict] = []
+        while not players:
+            try:
+                players = await trivia_workflow.query("getPlayers")
+            except:
+                pass
+
         player_names = []
         if game_id not in games:
             games[game_id]["users"] = {}
@@ -153,7 +173,14 @@ async def start(game_id):
 
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
         await trivia_workflow.signal("start-game-signal", StartGameSignalInput)
-        progress = await trivia_workflow.query("getProgress")
+        progress: List[Dict] = []
+        while not progress:
+            try:
+                progress = await trivia_workflow.query("getProgress")
+            except:
+                pass
+
+
         games[game_id]["number_questions"] = int(progress["numberOfQuestions"])
         games[game_id]["question_number"] = "1"
         games[game_id]["started"] = True
@@ -188,7 +215,13 @@ async def join(game_id):
             return render_template('join.html', game_id=game_id, error=e.cause)
         
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-        players = await trivia_workflow.query("getPlayers")
+        players: List[Dict] = []
+        while not players:
+            try:
+                players = await trivia_workflow.query("getPlayers")
+            except:
+                pass
+
         player_names = []
         if game_id not in games:
             games[game_id]["users"] = {}
@@ -220,8 +253,13 @@ async def get_results_ready(game_id):
     client = await get_client()  
 
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-    progress = await trivia_workflow.query("getProgress")  
-    
+    progress: List[Dict] = []
+    while not progress:
+        try:
+            progress = await trivia_workflow.query("getProgress")
+        except:
+            pass
+
     if progress["stage"] == "result":
         return jsonify({'ready': True})
     else:
@@ -233,8 +271,13 @@ async def check_ready(game_id):
     client = await get_client()
    
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+    questions: List[Dict] = []
+    while not questions:
+        try:
+            questions = await trivia_workflow.query("getQuestions")            
+        except:
+            pass
 
-    questions = await trivia_workflow.query("getQuestions")
     if not questions:
         return jsonify({'ready': False})
     else:
@@ -247,7 +290,12 @@ async def check_progress(game_id, question):
     client = await get_client()
    
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-    progress = await trivia_workflow.query("getProgress")
+    progress: List[Dict] = []
+    while not progress:
+        try:
+            progress = await trivia_workflow.query("getProgress")
+        except:
+            pass
 
     question = int(question)
     if question == progress["numberOfQuestions"] and progress["stage"] == "scores":
@@ -265,7 +313,13 @@ async def play(game_id):
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
     questions = games[game_id]["questions"]
 
-    progress = await trivia_workflow.query("getProgress")
+    progress: List[Dict] = []
+    while not progress:
+        try:
+            progress = await trivia_workflow.query("getProgress")
+        except:
+            pass
+
     i=str(progress["currentQuestion"])
     question = questions[i]["question"]
     choices = questions[i]["multipleChoiceAnswers"]
@@ -304,7 +358,13 @@ async def results(game_id,choice):
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
     questions = games[game_id]["questions"]
 
-    progress = await trivia_workflow.query("getProgress")
+    progress: List[Dict] = []
+    while not progress:
+        try:
+            progress = await trivia_workflow.query("getProgress")
+        except:
+            pass
+
     i=str(progress["currentQuestion"])
     question = questions[i]["question"]
     answer = questions[i]["answer"]
@@ -320,7 +380,12 @@ async def results(game_id,choice):
 async def view(game_id):  
     client = await get_client()
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-    players = await trivia_workflow.query("getPlayers")
+    players: List[Dict] = []
+    while not players:
+        try:
+            players = await trivia_workflow.query("getPlayers")
+        except:
+            pass
 
     return render_template('end.html', players=players, game_id=game_id)
 
@@ -329,8 +394,19 @@ async def end(game_id):
     client = await get_client()
     trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
 
-    players = await trivia_workflow.query("getPlayers")
-    progress = await trivia_workflow.query("getProgress")
+    players: List[Dict] = []
+    while not players:
+        try:
+            players = await trivia_workflow.query("getPlayers")
+        except:
+            pass
+
+    progress: List[Dict] = []
+    while not progress:
+        try:
+            progress = await trivia_workflow.query("getProgress")
+        except:
+            pass
 
     if progress["stage"] == "scores":
         if game_id in games:
