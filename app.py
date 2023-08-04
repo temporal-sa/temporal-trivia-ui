@@ -34,7 +34,7 @@ async def home():
                     try:
                         players = await trivia_workflow.query("getPlayers")
                     except:
-                        pass
+                        continue
 
                 player_names = []
 
@@ -49,7 +49,8 @@ async def home():
                     try:
                         progress = await trivia_workflow.query("getProgress")
                     except:
-                        pass
+                        del games[game_id]
+                        continue
 
                 if progress["stage"] != "start":
                     games[game_id]["started"] = True
