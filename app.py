@@ -17,6 +17,7 @@ games = {}
 @app.route('/')
 async def home(): 
     client = await get_client()
+    running_games = []
     async for wf in client.list_workflows("ExecutionStatus='Running' and WorkflowType='TriviaGameWorkflow'"):
         handle = client.get_workflow_handle(wf.id, run_id=wf.run_id)
 
@@ -26,43 +27,44 @@ async def home():
         game_id = None
         if regex:
             game_id = regex.group() 
-        if (desc.status == 1):               
-                trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-                
-                players: List[Dict] = []
-                while not players:
-                    try:
-                        players = await trivia_workflow.query("getPlayers")
-                    except:
-                        continue
+        if (desc.status == 1):              
+            trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
+            
+            players: List[Dict] = []
+            while not players:
+                try:
+                    players = await trivia_workflow.query("getPlayers")
+                except:
+                    pass
 
-                player_names = []
+            player_names = []
+            if game_id not in games:
+                games[game_id] = {}
+                games[game_id]["users"] = {}
+            for p in players:
+                player_names.append(p)   
+            
+            progress: List[Dict] = []
+            while not progress:
+                try:
+                    progress = await trivia_workflow.query("getProgress")                 
+                except:
+                    pass
 
-                if game_id not in games:
-                    games[game_id] = {}
-                    games[game_id]["users"] = {}
-                for p in players:
-                    player_names.append(p)   
-                
-                progress: List[Dict] = []
-                while not progress:
-                    try:
-                        progress = await trivia_workflow.query("getProgress")
-                    except:
-                        del games[game_id]
-                        continue
+            if progress["stage"] != "start":
+                games[game_id]["started"] = True                 
 
-                if progress["stage"] != "start":
-                    games[game_id]["started"] = True
+            running_games.append(game_id)
+            games[game_id]["users"] = player_names
 
-                games[game_id]["users"] = player_names
-        else:
-            if game_id is not None and game_id in games:
-                del games[game_id]
-                
-                qr_file = f'static/qr/qr-{game_id}.gif'
-                if os.path.isfile(qr_file):
-                    os.remove(qr_file)      
+    # cleanup games
+    delete_games = []
+    for game_id in games:
+        if game_id not in running_games:
+            delete_games.append(game_id)
+
+    for game_id in delete_games:
+        del games[game_id]                         
 
     return render_template('index.html', games=games)
 
