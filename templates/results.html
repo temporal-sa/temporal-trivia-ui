@@ -3,6 +3,7 @@
 {% block content %}
 
 <head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
     table {
       border-collapse: separate;
@@ -32,6 +33,7 @@
   </style>
 </head>
 <body>
+  <div id="cname-div" style="position: fixed; top: 10px; right: 10px;"></div>
 <h2 style="text-align: center;">{{ question }}</h2>
 <table>
   <tr>
@@ -67,6 +69,21 @@
               }
           });
   }
+
+  $(document).ready(function() {
+    function updateCName() {
+      $.ajax({
+        url: '/get_cname',
+        type: 'GET',
+        success: function(data) {
+          $('#cname-div').text(data.cname);
+        }
+      });
+    }
+
+    setInterval(updateCName, 3000);  // Update every 3 seconds
+    updateCName();  // Initial update
+  });
 </script>
 
 

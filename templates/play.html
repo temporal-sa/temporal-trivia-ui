@@ -3,6 +3,7 @@
 {% block content %}
 
 <head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
     table {
       border-collapse: separate;
@@ -40,6 +41,8 @@
   </style>
 </head>
 <body>
+<div id="cname-div" style="position: fixed; top: 10px; right: 10px;"></div>
+<div id="server-status" style="text-align: center; color: red;"></div>
 <h2 style="text-align: center;">{{ question }}</h2>
 <div id="countdown" style="text-align: center;">You have {{ answer_limit }} seconds to choose an answer.</div>
 <form id="choiceForm" action="/{{ game_id }}/play" method="post">
@@ -67,7 +70,7 @@
   var countdownInterval = setInterval(function() {
     var now = new Date().getTime();
     var distance = countDownDate - now;
-    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    var seconds = Math.floor((distance % (1000 * answerLimitSeconds)) / 1000);
     document.getElementById("countdown").innerHTML = "You have " + seconds + " seconds to choose an answer.";
     if (distance < 0) {
       clearInterval(countdownInterval);
@@ -94,7 +97,7 @@
         url: "/{{ game_id }}/play",
         type: 'post',
         data: $('#choiceForm').serialize(),
-        success: function() {
+        success: function() {         
           // Start checking results after successful form submission
           var checkResultsInterval = setInterval(function() {
             $.get('/{{ game_id }}/check_results', function(data) {
@@ -105,10 +108,52 @@
               }
             });
           }, 1000);
-        }
+        },       
       });
     }
   });
+
+  $(document).ready(function() {
+    function updateCName() {
+      $.ajax({
+        url: '/get_cname',
+        type: 'GET',
+        success: function(data) {
+          $('#cname-div').text(data.cname);
+        }
+      });
+    }
+
+    setInterval(updateCName, 3000);  // Update every 3 seconds
+    updateCName();  // Initial update
+  });
+
+  $(document).ready(function() {
+  function checkServerStatus() {
+    $.ajax({
+      url: '/{{ game_id }}/check_ready',
+      type: 'GET',
+      timeout: 3000, // sets timeout to 3 seconds
+      success: function(data) {
+        if (data.ready) {
+          $('#server-status').text("").css('color', 'black');
+        } else {
+          $('#server-status').text("Game not ready...").css('color', 'red');
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        if (textStatus === 'timeout') {
+          $('#server-status').text("Cannot connect to Temporal cloud...retrying").css('color', 'red');
+        } else {
+          $('#server-status').text("Error: " + textStatus).css('color', 'red');
+        }
+      }
+    });
+  }
+
+  setInterval(checkServerStatus, 3000);  // Check every 3 seconds
+  checkServerStatus();  // Initial check
+});
 </script>
 </body>
 

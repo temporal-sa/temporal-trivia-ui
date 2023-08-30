@@ -8,6 +8,8 @@ import qrcode
 import qrcode.image.svg
 import re
 from typing import List, Dict
+import dns.resolver
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 app.secret_key = 'SA_R0ck5!'
@@ -29,13 +31,18 @@ async def home():
             game_id = regex.group() 
         if (desc.status == 1):              
             trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-            
+
+            # Try to get players, if we aren't successful skip workflow as something is likely wrong with it.
             players: List[Dict] = []
-            while not players:
+            for _ in range(3):
                 try:
                     players = await trivia_workflow.query("getPlayers")
+                    if players:
+                        break
                 except:
                     pass
+            else:
+                continue
 
             player_names = []
             if game_id not in games:
@@ -47,7 +54,7 @@ async def home():
             progress: List[Dict] = []
             while not progress:
                 try:
-                    progress = await trivia_workflow.query("getProgress")                 
+                    progress = await trivia_workflow.query("getProgress")             
                 except:
                     pass
 
@@ -86,7 +93,7 @@ async def create_game():
         category_dropdown = request.form.get('category')
         category_custom = request.form.get('customCategory')
 
-        answer_limit=60
+        answer_limit=300
         if mode == 'challenge':
             answer_limit=15
 
@@ -330,6 +337,13 @@ async def play(game_id):
     if request.method == 'GET':
         return render_template('play.html', question=question, choices=choices, game_id=game_id, answer_limit=games[game_id]["answer_limit"])
     else:
+        progress: List[Dict] = []
+        while not progress:
+            try:
+                progress = await trivia_workflow.query("getProgress")
+            except:
+                return jsonify({'status': 'error'})
+
         choice = request.form['choice']
         choice_lower = choice.lower()
 
@@ -420,6 +434,26 @@ async def end(game_id):
         os.remove(qr_file)
 
     return render_template('end.html', players=players, game_id=game_id)
+
+@app.route('/get_cname')
+async def get_cname():
+
+    cname = None
+    parsed_url = urlparse('//' + os.getenv("TEMPORAL_HOST_URL")) 
+    hostname = parsed_url.hostname
+    try:
+        result = dns.resolver.resolve(hostname, 'CNAME')
+        for rdata in result:
+            cname=str(rdata.target)
+    except dns.resolver.NoAnswer:
+        print('No CNAME record found for', hostname)
+    except dns.resolver.NXDOMAIN:
+        print('No such domain', hostname)
+    except dns.resolver.Timeout:
+        print('Timeout while querying', hostname)
+    except Exception as e:
+        print('Error occurred: ', e)
+    return jsonify(cname=cname)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True) 
