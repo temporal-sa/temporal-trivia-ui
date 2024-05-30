@@ -27,7 +27,7 @@
 <script>
 setTimeout(function(){
    check();
-}, 3000);
+}, 1000);
 
 function check() {
     fetch('/{{ game_id }}/check_ready')
@@ -35,8 +35,6 @@ function check() {
         .then(data => {
             if (data.ready) {
                 window.location.href = '/{{ game_id }}/play';
-            } else {
-                setTimeout(check, 1000);
             }
         });
 }

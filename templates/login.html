@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<head>
+  <style>
+    .top-align {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      gap: 0px; /* Add space between elements */
+      padding-top: 0px; /* Add some padding at the top */
+    }
+    table {
+      margin-top: 0px;
+    }
+  </style>
+</head>
+<body>  
+<div class="top-align">
+  <h2>Welcome to Temporal Trivia Game!</h2> 
+  <h9>Brought to you by the Temporal SA Team</h9>
+  
+  <div class="container">
+    <h2 class="mt-5">Login</h2>
+    <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" class="form-control" id="password" required>
+    </div>
+    <button class="btn btn-dark my-3" onclick="checkPassword()">Login</button>
+  </div>
+
+  <script>
+    function checkPassword() {
+        var password = document.getElementById("password").value;
+        if (password === "temp0ral") {
+            window.location.href = '/game';
+        } else {
+            alert("Incorrect password. Please try again.");
+        }
+    }
+  </script>
+</body>
+
+{% endblock %}

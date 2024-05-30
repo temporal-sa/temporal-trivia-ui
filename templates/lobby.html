@@ -35,7 +35,7 @@
 <body>
 <img src="static/qr/qr-{{ game_id }}.gif" alt="Join" width="100" height="100"> 
 <h2 style="text-align: center;">Lobby</h2>
-<h3 id="timer" style="text-align: center;">Time left: 60 seconds</h3>
+<h3 id="timer" style="text-align: center;">Time left: 300 seconds</h3>
 <table id="playerTable">
   <tr>
     <th>Players</th>
@@ -51,13 +51,13 @@
 </body>
 <script>
     var start = Date.now(); // get the current time in milliseconds
-    var gameStartInSeconds = 60;
+    var gameStartInSeconds = 300;
     var interval = setInterval(function() {
         var elapsed = (Date.now() - start) / 1000; // calculate the elapsed time in seconds
         var remainingTime = gameStartInSeconds - Math.floor(elapsed);
         document.getElementById("timer").innerText = "Time left: " + remainingTime + " seconds";
         console.log("Elapsed time: " + elapsed);
-        if(elapsed > 60) { // if 60 seconds have passed
+        if(elapsed > gameStartInSeconds) { // if start time has passed
             console.log("300 seconds have passed. Redirecting to start page.");
             clearInterval(interval); // stop the interval
             window.location.href = '/{{ game_id }}/start'; // redirect to start page

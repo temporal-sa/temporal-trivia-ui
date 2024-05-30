@@ -18,18 +18,21 @@ games = {}
 
 @app.route('/')
 async def home(): 
+    return render_template('login.html')
+
+@app.route('/game')
+async def game():
+
     client = await get_client()
-    running_games = []
-    async for wf in client.list_workflows("ExecutionStatus='Running' and WorkflowType='TriviaGameWorkflow'"):
+    async for wf in client.list_workflows("WorkflowType='TriviaGameWorkflow'"):
         handle = client.get_workflow_handle(wf.id, run_id=wf.run_id)
 
         desc = await handle.describe()
         regex = re.search(r'(?<=trivia-game-)\d+$', wf.id)
-
         game_id = None
         if regex:
             game_id = regex.group() 
-        if (desc.status == 1):              
+        if (desc.status == 1):           
             trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
 
             # Try to get players, if we aren't successful skip workflow as something is likely wrong with it.
@@ -61,22 +64,15 @@ async def home():
             if progress["stage"] != "start":
                 games[game_id]["started"] = True                 
 
-            running_games.append(game_id)
             games[game_id]["users"] = player_names
-
-    # cleanup games
-    delete_games = []
-    for game_id in games:
-        if game_id not in running_games:
-            delete_games.append(game_id)
-
-    for game_id in delete_games:
-        del games[game_id]                         
+        else:
+            if game_id in games:
+                del games[game_id]                      
 
     return render_template('index.html', games=games)
 
 def create_qr_code(game_id):
-    img = qrcode.make(f'https://triviav2.tmprl-demo.cloud/{game_id}/join')
+    img = qrcode.make(f'https://trivia.tmprl-demo.cloud/{game_id}/join')
     with open(f'static/qr/qr-{game_id}.gif', 'wb') as qr:
         img.save(qr)
 

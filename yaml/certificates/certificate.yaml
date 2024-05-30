@@ -7,7 +7,7 @@ spec:
   privateKey:
     rotationPolicy: Always
   dnsNames:
-  - triviav2.tmprl-demo.cloud
+  - trivia.tmprl-demo.cloud
   issuerRef:
     name: letsencrypt
     kind: ClusterIssuer
