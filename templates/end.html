@@ -7,7 +7,6 @@
 <head>
   <meta http-equiv="refresh" content="5">
   <style>
-
     table {
       border-collapse: collapse;
       width: 100%;
@@ -20,7 +19,6 @@
       width: 100%;
       padding: 0px 40px;
     } 
-       
   </style>
 </head>
 <body>
@@ -38,10 +36,19 @@
   {% endfor %}
 </table>
 <div style="text-align: center;">
-  <button onclick="location.href='/game'" class="btn btn-dark my-3" type="button">Play Again</button>
+  <button id="playAgainBtn" onclick="playAgain()" class="btn btn-dark my-3" type="button">Play Again</button>
 </div>
+
+<script>
+  function playAgain() {
+    var playAgainBtn = document.getElementById('playAgainBtn');
+    playAgainBtn.disabled = true;
+    window.location.href = '/game';
+  }
+</script>
 </body>
 </html>
 
 {% endblock %}
+
 

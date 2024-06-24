@@ -20,15 +20,21 @@
       width: 68%;
     }    
 </style>
+<script>
+    function disableSubmitButton() {
+        var submitButton = document.getElementById("submit-btn");
+        submitButton.disabled = true;
+    }
+</script>
 <body>
 <h2>Join the Game {{ game_id }}</h2>
-<form action="/{{ game_id }}/join" method="post">
+<form action="/{{ game_id }}/join" method="post" onsubmit="disableSubmitButton()">
   <label for="player">Enter your player name:</label><br>
   <input type="text" id="player" name="player" required><br>
   {% if error %}
   <p style="color: red;">{{ error }}</p>
   {% endif %}
-  <input type="submit" class="btn btn-dark my-3" value="Join">
+  <input type="submit" id="submit-btn" class="btn btn-dark my-3" value="Join">
 </form>
 <br><br>
 </body>

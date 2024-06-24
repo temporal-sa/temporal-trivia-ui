@@ -4,10 +4,17 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from temporalio import activity, exceptions
-from typing import Optional
+from typing import Optional, List, Dict
+
+@dataclass
+class GamesWorkflowInput:
+    GameId: int
+    State: str
+    Players: List[Dict]
 
 @dataclass
 class TriviaWorkflowInput:
+    GameId: str
     NumberOfPlayers: int
     NumberOfQuestions: int
     AnswerTimeLimit: int

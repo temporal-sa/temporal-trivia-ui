@@ -3,7 +3,7 @@ import os
 import uuid
 from client import get_client
 from temporalio.client import WorkflowFailureError
-from workflow import TriviaWorkflowInput, PlayerWorkflowInput, StartGameSignal, AnswerSignal
+from workflow import TriviaWorkflowInput, GamesWorkflowInput, PlayerWorkflowInput, StartGameSignal, AnswerSignal
 import qrcode
 import qrcode.image.svg
 import re
@@ -23,51 +23,71 @@ async def home():
 @app.route('/game')
 async def game():
 
+    print(games)
     client = await get_client()
-    async for wf in client.list_workflows("WorkflowType='TriviaGameWorkflow'"):
-        handle = client.get_workflow_handle(wf.id, run_id=wf.run_id)
-
-        desc = await handle.describe()
-        regex = re.search(r'(?<=trivia-game-)\d+$', wf.id)
-        game_id = None
-        if regex:
-            game_id = regex.group() 
-        if (desc.status == 1):           
-            trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
-
-            # Try to get players, if we aren't successful skip workflow as something is likely wrong with it.
-            players: List[Dict] = []
-            for _ in range(3):
-                try:
-                    players = await trivia_workflow.query("getPlayers")
-                    if players:
-                        break
-                except:
-                    pass
-            else:
-                continue
-
-            player_names = []
-            if game_id not in games:
-                games[game_id] = {}
-                games[game_id]["users"] = {}
-            for p in players:
-                player_names.append(p)   
+    try:
+        trivia_workflow = client.get_workflow_handle(workflow_id="trivia-game")
+        desc = await trivia_workflow.describe()
+        if (desc.status != 1):
+            print("Trivia game state workflow does is not running, starting...")
             
-            progress: List[Dict] = []
-            while not progress:
-                try:
-                    progress = await trivia_workflow.query("getProgress")             
-                except:
-                    pass
+            await client.start_workflow(
+                "TriviaGamesWorkflow",
+                id=f'trivia-game',
+                task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+            )                
+    except:
+        print("Trivia game state workflow does not exist, starting...")
+        
+        await client.start_workflow(
+            "TriviaGamesWorkflow",
+            id=f'trivia-game',
+            task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+        )        
+    
+    game_status = await trivia_workflow.query("getGames") 
+    print(game_status)
+    for game_id in game_status:
+        print("here")
+        game_id = None
+    
+        trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
 
-            if progress["stage"] != "start":
-                games[game_id]["started"] = True                 
-
-            games[game_id]["users"] = player_names
+        # Try to get players, if we aren't successful skip workflow as something is likely wrong with it.
+        players: List[Dict] = []
+        for _ in range(3):
+            try:
+                players = await trivia_workflow.query("getPlayers")
+                if players:
+                    break
+            except:
+                pass
         else:
-            if game_id in games:
-                del games[game_id]                      
+            continue
+
+        player_names = []
+        if game_id not in games:
+            games[game_id] = {}
+            games[game_id]["users"] = {}
+        for p in players:
+            player_names.append(p)   
+        
+        progress: List[Dict] = []
+        while not progress:
+            try:
+                progress = await trivia_workflow.query("getProgress")             
+            except:
+                pass
+
+        if progress["stage"] != "start":
+            games[game_id]["started"] = True                 
+
+        games[game_id]["users"] = player_names               
+
+    # cleanup games where workflow was deleted due to storage tiering
+    for game_id in list(games.keys()):
+        if game_id not in game_status:
+            del games[game_id]
 
     return render_template('index.html', games=games)
 
@@ -86,6 +106,7 @@ async def create_game():
         mode = request.form.get('mode')
         number_questions = int(request.form.get('questions'))
         number_players = int(request.form.get('players'))
+
         category_dropdown = request.form.get('category')
         category_custom = request.form.get('customCategory')
 
@@ -106,10 +127,35 @@ async def create_game():
         games[game_id]["number_players"] = number_players
         games[game_id]["started"] = False
         games[game_id]["answer_limit"] = answer_limit
-
+        
         client = await get_client()
 
+        # Start game state workflow if not started
+        try:
+            # Attempt to describe the workflow
+            handle = client.get_workflow_handle(workflow_id="trivia-game")
+            desc = await handle.describe()
+
+            if desc.status.name in ["COMPLETED", "FAILED", "CANCELED", "TIMED_OUT", "TERMINATED"]:
+                print("Trivia game state workflow does is not running, starting...")
+                
+                await client.start_workflow(
+                    "TriviaGamesWorkflow",
+                    id=f'trivia-game',
+                    task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+                )
+
+        except Exception as e:
+            print("Trivia game state workflow does not exist, starting...")
+            
+            await client.start_workflow(
+                "TriviaGamesWorkflow",
+                id=f'trivia-game',
+                task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
+            )                       
+
         trivia_game_input = TriviaWorkflowInput(
+            GameId=game_id,
             Category=category,
             NumberOfPlayers=number_players,
             NumberOfQuestions=number_questions,
@@ -287,7 +333,8 @@ async def check_ready(game_id):
     if not questions:
         return jsonify({'ready': False})
     else:
-        games[game_id]["questions"] = questions
+        if game_id in games:
+            games[game_id]["questions"] = questions
         return jsonify({'ready': True})
 
 @app.route('/<game_id>/<question>/check_progress', methods=['GET'])

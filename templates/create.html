@@ -75,27 +75,25 @@
     .error-message {
       display: inline-block;
     }
-    
-
-    
   </style>
 </head>
 
 <body>
 <h2>Create Game {{ game_id }}</h2>
-<form class="table-container" action="/create_game" method="post">
+<form class="table-container" action="/create_game" method="post" onsubmit="disableSubmitButton()">
   <table>
-    <td>
-      <label for="mode">Mode:</label>
-      <select id="mode" name="mode">
-        <option value="normal">Normal</option>
-        <option value="challenge">Challenge</option>
-      </select>
-    </td>    
+    <tr id="additionalOptions" style="display: none;">
+      <td>
+        <label for="mode">Mode:</label>
+        <select id="mode" name="mode">
+          <option value="normal" selected>Normal</option>
+          <option value="challenge">Challenge</option>
+        </select>
+      </td>
       <td>
         <label for="category">Category:</label>
         <select id="category" name="category" onchange="handleCategoryChange(this)">
-          <option value="random">Random</option>
+          <option value="random" selected>Random</option>
           <option value="temporal">Temporal</option>
           <option value="general">General</option>
           <option value="software_engineering">Software Engineering</option>
@@ -113,6 +111,7 @@
       <td>
         <label for="questions">Questions:</label>
         <select id="questions" name="questions">
+          <option value="3" selected>3</option>
           {% for i in range(1, 11) %}
           <option value="{{ i }}">{{ i }}</option>
           {% endfor %}
@@ -121,6 +120,7 @@
       <td>
         <label for="players">Players:</label>
         <select id="players" name="players">
+          <option value="1" selected>1</option>
           {% for i in range(1, 11) %}
           <option value="{{ i }}">{{ i }}</option>
           {% endfor %}
@@ -128,15 +128,25 @@
       </td>
     </tr>
     <tr>
-      <td>
+      <td colspan="4">
         <label for="player">Player name:</label>
         <input type="text" id="player" name="player" required>
       </td>
+    </tr>
+    <tr>
       <td colspan="2" style="display: flex; justify-content: space-between; align-items: center;">
-        <div></div>     
-        <input type="submit" class="btn btn-dark my-3" value="Create">
+        <div></div> 
+        <input type="button" class="btn btn-dark my-3" value="Options" onclick="toggleOptions()">       
       </td>
-      <td>
+    </tr>    
+    <tr>
+      <td colspan="2" style="display: flex; justify-content: space-between; align-items: center;">
+        <div></div> 
+        <input type="submit" class="btn btn-dark my-3" value="Start" id="submitBtn">
+      </td>
+    </tr>
+    <tr>
+      <td colspan="4">
         <div class="error-container">
           <div class="error-message">
             {% if error %}
@@ -157,8 +167,25 @@
       customInput.style.display = 'none';
     }
   }
+
+  function disableSubmitButton() {
+    var submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+  }
+
+  function toggleOptions() {
+    var additionalOptions = document.getElementById('additionalOptions');
+    if (additionalOptions.style.display === 'none' || additionalOptions.style.display === '') {
+      additionalOptions.style.display = 'table-row';
+    } else {
+      additionalOptions.style.display = 'none';
+    }
+  }
 </script>
 </body>
 
 {% endblock %}
+
+
+
 
