@@ -29,7 +29,6 @@ async def home():
 @app.route('/game')
 async def game():
 
-    print(games)
     client = await get_client()
     try:
         trivia_workflow = client.get_workflow_handle(workflow_id="trivia-game")
@@ -60,7 +59,6 @@ async def game():
         except:
             pass
 
-    print(game_status)
     for game_id in game_status:
         game_id = None
     
