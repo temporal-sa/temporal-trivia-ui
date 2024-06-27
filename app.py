@@ -16,6 +16,12 @@ app.secret_key = 'SA_R0ck5!'
 
 games = {}
 
+
+qr_directory = "static/qr"
+
+# Create directory if it doesn't exist
+os.makedirs(qr_directory, exist_ok=True)
+
 @app.route('/')
 async def home(): 
     return render_template('login.html')
@@ -45,10 +51,17 @@ async def game():
             task_queue=os.getenv("TEMPORAL_TASK_QUEUE"),
         )        
     
-    game_status = await trivia_workflow.query("getGames") 
+    game_status: List[Dict] = []
+    is_query_games = False
+    while not is_query_games:
+        try:
+            game_status = await trivia_workflow.query("getGames")
+            is_query_games = True 
+        except:
+            pass
+
     print(game_status)
     for game_id in game_status:
-        print("here")
         game_id = None
     
         trivia_workflow = client.get_workflow_handle(f'trivia-game-{game_id}')
